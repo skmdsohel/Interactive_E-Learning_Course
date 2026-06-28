@@ -1,6 +1,7 @@
 """Pydantic schemas package (request/response DTOs)."""
 from app.schemas.common import ErrorResponse, HealthResponse, Message
 from app.schemas.course import CourseListItem, CourseRead, SectionRead, VideoRead
+from app.schemas.user import GoogleAuthRequest, TokenResponse, UserRead
 
 __all__ = [
     "ErrorResponse",
@@ -10,4 +11,7 @@ __all__ = [
     "CourseRead",
     "SectionRead",
     "VideoRead",
+    "GoogleAuthRequest",
+    "TokenResponse",
+    "UserRead",
 ]

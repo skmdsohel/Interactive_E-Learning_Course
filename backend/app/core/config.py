@@ -65,6 +65,15 @@ class Settings(BaseSettings):
     # When true, courses whose folder was removed from disk are deleted from the DB.
     AUTO_SEED_PRUNE_MISSING: bool = True
 
+    # ---- Auth (Google Sign-In) ----
+    # OAuth 2.0 Web client ID from Google Cloud Console.
+    # Must be identical on backend and frontend (VITE_GOOGLE_CLIENT_ID).
+    GOOGLE_CLIENT_ID: str = ""
+    # Secret used to sign the app's own JWT session tokens. Override in production.
+    JWT_SECRET: str = "change-me-in-production-please-use-a-long-random-string"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+
     @computed_field  # type: ignore[misc]
     @property
     def DATABASE_URL(self) -> str:

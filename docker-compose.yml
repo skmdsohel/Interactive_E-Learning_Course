@@ -38,6 +38,9 @@ services:
       DB_PASSWORD: lms_password
       DB_NAME: lms_db
       CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please-use-a-long-random-string}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-10080}
     ports:
       - "8000:8000"
     volumes:
@@ -56,6 +59,7 @@ services:
       - backend
     environment:
       VITE_API_PROXY_TARGET: http://backend:8000
+      VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     ports:
       - "5173:5173"
     volumes:
