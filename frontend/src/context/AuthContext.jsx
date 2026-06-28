@@ -14,7 +14,7 @@ import {
 } from "../services/apiClient.js";
 import { authService } from "../services/authService.js";
 
-const STORAGE_KEY = "lms.auth";
+const STORAGE_KEY = "learnsphere.auth";
 
 const AuthContext = createContext(null);
 

@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     )
 
     # ---- App ----
-    APP_NAME: str = "LMS API"
+    APP_NAME: str = "LearnSphere API"
     APP_ENV: str = "development"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = True

@@ -1,4 +1,4 @@
-# LMS Frontend (React 19 + Vite)
+# LearnSphere Frontend (React 19 + Vite)
 
 Single-page application that talks to the FastAPI backend.
 

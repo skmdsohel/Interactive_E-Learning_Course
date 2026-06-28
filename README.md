@@ -1,10 +1,10 @@
-# LMS — Phase 1 Scaffold
+# LearnSphere
 
-A localhost-only Learning Management System scaffold. Phase 1 focuses on a
-clean, production-shaped architecture that can host authentication, courses,
-enrollments, and learner features in later phases **without refactoring**.
+A localhost-only Learning Management System. LearnSphere provides a
+clean, production-shaped architecture for hosting authentication, courses,
+enrollments, and learner progress features.
 
-> Out of scope for Phase 1: login, signup, JWT, authentication, user
+> Out of scope for the initial scaffold: login, signup, JWT, authentication, user
 > management, and any course/business logic.
 
 ## Stack

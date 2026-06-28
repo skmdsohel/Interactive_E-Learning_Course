@@ -27,7 +27,7 @@ export default function Navbar() {
               <path d="M5 17h11" />
             </svg>
           </span>
-          <span className="text-base font-semibold tracking-tight text-fg">LMS</span>
+          <span className="text-base font-semibold tracking-tight text-fg">LearnSphere</span>
         </NavLink>
 
         <nav className="hidden flex-1 items-center gap-1 sm:flex">

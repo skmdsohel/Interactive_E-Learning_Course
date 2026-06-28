@@ -1,6 +1,6 @@
-# LMS Backend (FastAPI)
+# LearnSphere Backend (FastAPI)
 
-Production-quality FastAPI scaffold for the LMS. Phase 1 — **no auth**, **no business logic**, only the architectural foundation.
+Production-quality FastAPI scaffold for LearnSphere. Phase 1 — **no auth**, **no business logic**, only the architectural foundation.
 
 ## Stack
 

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-const STORAGE_KEY = "lms.theme";
+const STORAGE_KEY = "learnsphere.theme";
 const THEMES = ["light", "dark", "system"];
 
 const ThemeContext = createContext(null);

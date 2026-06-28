@@ -96,7 +96,7 @@ def sync_content(db: Session, *, prune_missing_courses: bool = False) -> SyncSta
             course = Course(
                 slug=slug,
                 title=title,
-                instructor="LMS Instructor",
+                instructor="LearnSphere Instructor",
                 description=f"Auto-synced from {slug}/",
                 thumbnail_path=_find_thumbnail(slug),
             )
