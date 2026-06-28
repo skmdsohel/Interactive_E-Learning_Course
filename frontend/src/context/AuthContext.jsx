@@ -99,6 +99,8 @@ export function AuthProvider({ children }) {
       user,
       isAuthenticated: Boolean(token && user),
       isAdmin: user?.role === "admin",
+      isInstructor: user?.role === "instructor",
+      canManageCourses: user?.role === "admin" || user?.role === "instructor",
       loading,
       signInWithGoogle,
       logout,

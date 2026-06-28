@@ -1,11 +1,14 @@
 """Course, Section, Video ORM models."""
-from datetime import datetime
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import BigInteger, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base, IdMixin, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.quiz import Quiz
+    from app.models.user import User
 
 
 class Course(IdMixin, TimestampMixin, Base):
@@ -16,12 +19,24 @@ class Course(IdMixin, TimestampMixin, Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     instructor: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     thumbnail_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    # Owning instructor user. Null for auto-synced or unassigned courses.
+    instructor_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     sections: Mapped[List["Section"]] = relationship(
         back_populates="course",
         cascade="all, delete-orphan",
         order_by="Section.order_index",
         lazy="selectin",
+    )
+    instructor_user: Mapped[Optional["User"]] = relationship(
+        "User",
+        foreign_keys=[instructor_id],
+        lazy="joined",
     )
 
 
@@ -45,6 +60,12 @@ class Section(IdMixin, TimestampMixin, Base):
         back_populates="section",
         cascade="all, delete-orphan",
         order_by="Video.order_index",
+        lazy="selectin",
+    )
+    quiz: Mapped[Optional["Quiz"]] = relationship(
+        back_populates="section",
+        cascade="all, delete-orphan",
+        uselist=False,
         lazy="selectin",
     )
 

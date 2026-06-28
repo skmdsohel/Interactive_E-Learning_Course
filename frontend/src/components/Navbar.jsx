@@ -9,7 +9,7 @@ const linkInactive = "text-fg-muted hover:text-fg hover:bg-muted";
 const linkActive = "bg-brand-50 text-brand-700";
 
 export default function Navbar() {
-  const { isAuthenticated, isAdmin, user, logout } = useAuth();
+  const { isAuthenticated, isAdmin, canManageCourses, user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = () => {
@@ -44,6 +44,14 @@ export default function Navbar() {
           >
             Courses
           </NavLink>
+          {canManageCourses && (
+            <NavLink
+              to="/instructor"
+              className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkInactive}`}
+            >
+              Instructor
+            </NavLink>
+          )}
           {isAdmin && (
             <>
               <NavLink
@@ -85,6 +93,11 @@ export default function Navbar() {
                 {isAdmin && (
                   <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-soft-fg">
                     admin
+                  </span>
+                )}
+                {!isAdmin && canManageCourses && (
+                  <span className="rounded-full bg-warning-soft px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning-soft-fg">
+                    instructor
                   </span>
                 )}
               </div>

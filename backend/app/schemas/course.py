@@ -22,12 +22,30 @@ class VideoRead(ORMModel):
     updated_at: datetime
 
 
+class SectionQuizSummary(ORMModel):
+    """Lightweight quiz pointer attached to a SectionRead."""
+
+    id: int
+    question_count: int
+    pass_threshold: int
+
+
 class SectionRead(ORMModel):
     id: int
     course_id: int
     title: str
     order_index: int
     videos: List[VideoRead] = []
+    quiz: Optional[SectionQuizSummary] = None
+
+
+class InstructorRef(ORMModel):
+    """Minimal reference to an instructor user."""
+
+    id: int
+    name: Optional[str] = None
+    email: str
+    picture_url: Optional[str] = None
 
 
 class CourseListItem(ORMModel):
@@ -43,6 +61,8 @@ class CourseListItem(ORMModel):
     section_count: int = 0
     video_count: int = 0
     total_duration_seconds: int = 0
+    instructor_id: Optional[int] = None
+    instructor_user: Optional[InstructorRef] = None
 
 
 class CourseRead(ORMModel):
@@ -53,5 +73,7 @@ class CourseRead(ORMModel):
     description: Optional[str] = None
     thumbnail_url: Optional[str] = None
     sections: List[SectionRead] = []
+    instructor_id: Optional[int] = None
+    instructor_user: Optional[InstructorRef] = None
     created_at: datetime
     updated_at: datetime

@@ -10,7 +10,8 @@ function statusFor(progress) {
 }
 
 export default function PlaylistSidebar() {
-  const { course, currentVideo, selectVideo } = useVideoPlayer();
+  const { course, currentVideo, currentQuiz, selectVideo, selectQuiz } =
+    useVideoPlayer();
   const { byVideoId } = useProgress();
 
   if (!course) return null;
@@ -33,11 +34,13 @@ export default function PlaylistSidebar() {
               </p>
               <p className="text-[11px] text-fg-subtle">
                 {section.videos?.length ?? 0} videos
+                {section.quiz ? " · quiz" : ""}
               </p>
             </div>
             <ul>
               {(section.videos || []).map((video, idx) => {
-                const isActive = currentVideo?.id === video.id;
+                const isActive =
+                  currentQuiz == null && currentVideo?.id === video.id;
                 const status = statusFor(byVideoId?.[video.id]);
                 return (
                   <li key={video.id}>
@@ -67,6 +70,38 @@ export default function PlaylistSidebar() {
                   </li>
                 );
               })}
+              {section.quiz && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => selectQuiz(section.id, section.quiz.id)}
+                    className={`flex w-full items-start gap-3 px-4 py-2.5 text-left text-sm transition-colors ${
+                      currentQuiz?.quizId === section.quiz.id
+                        ? "bg-brand-50 text-brand-700"
+                        : "text-fg-muted hover:bg-muted hover:text-fg"
+                    }`}
+                  >
+                    <span
+                      className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                        currentQuiz?.quizId === section.quiz.id
+                          ? "bg-brand-600 text-brand-fg"
+                          : "bg-accent-soft text-accent-soft-fg"
+                      }`}
+                      title="Section quiz"
+                    >
+                      <svg viewBox="0 0 20 20" className="h-3 w-3" fill="currentColor" aria-hidden="true">
+                        <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm.75 12.5h-1.5v-1.5h1.5v1.5zM12 8.5c0 .9-.4 1.4-1.1 1.9-.6.4-.9.6-.9 1.1H8.5c0-1 .5-1.4 1.2-1.9.5-.4.8-.6.8-1.1 0-.5-.4-.9-1-.9s-1 .4-1.1.9H7c.1-1.3 1.1-2.3 2.5-2.3S12 7.2 12 8.5z" />
+                      </svg>
+                    </span>
+                    <span className="flex-1 truncate font-medium">
+                      Section quiz
+                    </span>
+                    <span className="shrink-0 text-xs text-fg-subtle">
+                      {section.quiz.question_count} Qs
+                    </span>
+                  </button>
+                </li>
+              )}
             </ul>
           </section>
         ))}

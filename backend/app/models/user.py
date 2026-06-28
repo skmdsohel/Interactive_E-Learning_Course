@@ -8,7 +8,10 @@ from app.database.base import Base, IdMixin, TimestampMixin
 
 # Allowed role values stored in `users.role`.
 ROLE_LEARNER = "learner"
+ROLE_INSTRUCTOR = "instructor"
 ROLE_ADMIN = "admin"
+
+ALL_ROLES = {ROLE_LEARNER, ROLE_INSTRUCTOR, ROLE_ADMIN}
 
 
 class User(IdMixin, TimestampMixin, Base):
@@ -26,3 +29,11 @@ class User(IdMixin, TimestampMixin, Base):
     @property
     def is_admin(self) -> bool:
         return self.role == ROLE_ADMIN
+
+    @property
+    def is_instructor(self) -> bool:
+        return self.role == ROLE_INSTRUCTOR
+
+    @property
+    def can_manage_courses(self) -> bool:
+        return self.role in (ROLE_ADMIN, ROLE_INSTRUCTOR)

@@ -29,6 +29,9 @@ function buildPlaylist(course) {
 export function VideoPlayerProvider({ children }) {
   const [course, setCourse] = useState(null);
   const [currentVideoId, setCurrentVideoId] = useState(null);
+  // The active quiz selection. When non-null, the course detail page renders
+  // the quiz panel in place of the video player.
+  const [currentQuiz, setCurrentQuiz] = useState(null); // { sectionId, quizId } | null
 
   const playlist = useMemo(() => buildPlaylist(course), [course]);
 
@@ -43,6 +46,7 @@ export function VideoPlayerProvider({ children }) {
 
   const loadCourse = useCallback((nextCourse, initialVideoId = null) => {
     setCourse(nextCourse);
+    setCurrentQuiz(null);
     const firstId =
       initialVideoId ??
       nextCourse?.sections?.flatMap((s) => s.videos || [])?.[0]?.id ??
@@ -54,22 +58,34 @@ export function VideoPlayerProvider({ children }) {
     (videoId) => {
       if (playlist.some((v) => v.id === videoId)) {
         setCurrentVideoId(videoId);
+        setCurrentQuiz(null);
       }
     },
     [playlist]
   );
 
+  const selectQuiz = useCallback((sectionId, quizId) => {
+    setCurrentQuiz({ sectionId, quizId });
+  }, []);
+
   const playNext = useCallback(() => {
-    if (hasNext) setCurrentVideoId(playlist[currentIndex + 1].id);
+    if (hasNext) {
+      setCurrentVideoId(playlist[currentIndex + 1].id);
+      setCurrentQuiz(null);
+    }
   }, [hasNext, playlist, currentIndex]);
 
   const playPrevious = useCallback(() => {
-    if (hasPrevious) setCurrentVideoId(playlist[currentIndex - 1].id);
+    if (hasPrevious) {
+      setCurrentVideoId(playlist[currentIndex - 1].id);
+      setCurrentQuiz(null);
+    }
   }, [hasPrevious, playlist, currentIndex]);
 
   const reset = useCallback(() => {
     setCourse(null);
     setCurrentVideoId(null);
+    setCurrentQuiz(null);
   }, []);
 
   const value = useMemo(
@@ -78,10 +94,12 @@ export function VideoPlayerProvider({ children }) {
       playlist,
       currentVideo,
       currentIndex,
+      currentQuiz,
       hasPrevious,
       hasNext,
       loadCourse,
       selectVideo,
+      selectQuiz,
       playNext,
       playPrevious,
       reset,
@@ -91,10 +109,12 @@ export function VideoPlayerProvider({ children }) {
       playlist,
       currentVideo,
       currentIndex,
+      currentQuiz,
       hasPrevious,
       hasNext,
       loadCourse,
       selectVideo,
+      selectQuiz,
       playNext,
       playPrevious,
       reset,

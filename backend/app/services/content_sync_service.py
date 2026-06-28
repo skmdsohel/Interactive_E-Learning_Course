@@ -30,6 +30,7 @@ from sqlalchemy.orm import Session
 
 from app.core.logging import get_logger
 from app.models.course import Course, Section, Video
+from app.models.quiz import Quiz, QuizQuestion
 from app.utils.storage import thumbnails_dir, videos_dir
 
 logger = get_logger(__name__)
@@ -68,6 +69,7 @@ class SyncStats:
     videos_added: int = 0
     videos_removed: int = 0
     videos_indexed: int = 0
+    quizzes_added: int = 0
 
 
 def sync_content(db: Session, *, prune_missing_courses: bool = False) -> SyncStats:
@@ -113,14 +115,19 @@ def sync_content(db: Session, *, prune_missing_courses: bool = False) -> SyncSta
     if prune_missing_courses:
         existing = db.execute(select(Course)).scalars().all()
         for c in existing:
-            if c.slug not in seen_slugs:
-                db.delete(c)
-                stats.courses_removed += 1
+            if c.slug in seen_slugs:
+                continue
+            # Never prune courses authored through the instructor UI — they
+            # don't exist on disk by design.
+            if c.instructor_id is not None:
+                continue
+            db.delete(c)
+            stats.courses_removed += 1
 
     db.commit()
     logger.info(
         "Content sync: +%d courses, ~%d updated, -%d removed, "
-        "+%d sections / -%d, +%d videos / -%d (indexed %d)",
+        "+%d sections / -%d, +%d videos / -%d (indexed %d), +%d quizzes",
         stats.courses_added,
         stats.courses_updated,
         stats.courses_removed,
@@ -129,6 +136,7 @@ def sync_content(db: Session, *, prune_missing_courses: bool = False) -> SyncSta
         stats.videos_added,
         stats.videos_removed,
         stats.videos_indexed,
+        stats.quizzes_added,
     )
     return stats
 
@@ -186,6 +194,7 @@ def _sync_course_tree(
 
         _sync_section_videos(db, section, files, root, stats)
         stats.videos_indexed += len(files)
+        _ensure_section_quiz(db, section, stats)
 
 
 def _sync_section_videos(
@@ -221,3 +230,77 @@ def _sync_section_videos(
             video.title = title
             video.order_index = order
     db.flush()
+
+
+# Generic placeholder questions seeded for every new section. The instructor
+# replaces these with real content later.
+_DUMMY_QUESTIONS: list[dict] = [
+    {
+        "text": "Which of the following best describes the focus of this section?",
+        "options": [
+            "Hands-on practical lessons",
+            "Theory and concepts",
+            "Reference material only",
+            "All of the above",
+        ],
+        "correct_index": 3,
+    },
+    {
+        "text": "What is the most effective way to absorb new material in a video lesson?",
+        "options": [
+            "Watch every video in one sitting without breaks",
+            "Pause, take notes, and rewatch difficult parts",
+            "Skip ahead to the conclusion",
+            "Only watch the introduction",
+        ],
+        "correct_index": 1,
+    },
+    {
+        "text": "Why do short quizzes after a section improve long-term retention?",
+        "options": [
+            "They make the course longer",
+            "Active recall reinforces memory",
+            "They replace the need to watch videos",
+            "They are required by the platform",
+        ],
+        "correct_index": 1,
+    },
+    {
+        "text": "After finishing a section, the recommended next step is to:",
+        "options": [
+            "Immediately move to a different course",
+            "Take the section quiz to check understanding",
+            "Skip the next section entirely",
+            "Delete your progress and start over",
+        ],
+        "correct_index": 1,
+    },
+]
+
+
+def _ensure_section_quiz(db: Session, section: Section, stats: SyncStats) -> None:
+    """Make sure each section has a placeholder quiz with 4 questions."""
+    existing = db.execute(
+        select(Quiz).where(Quiz.section_id == section.id)
+    ).scalar_one_or_none()
+    if existing is not None:
+        return
+
+    quiz = Quiz(section_id=section.id, title=f"{section.title} quiz")
+    db.add(quiz)
+    db.flush()
+    for idx, q in enumerate(_DUMMY_QUESTIONS):
+        db.add(
+            QuizQuestion(
+                quiz_id=quiz.id,
+                position=idx,
+                text=q["text"],
+                option_a=q["options"][0],
+                option_b=q["options"][1],
+                option_c=q["options"][2],
+                option_d=q["options"][3],
+                correct_index=q["correct_index"],
+            )
+        )
+    db.flush()
+    stats.quizzes_added += 1

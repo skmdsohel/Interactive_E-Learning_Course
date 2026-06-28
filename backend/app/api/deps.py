@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import TokenError, decode_access_token
 from app.database import get_db
-from app.models.user import ROLE_ADMIN, User
+from app.models.user import ROLE_ADMIN, ROLE_INSTRUCTOR, User
 from app.repositories.user_repository import UserRepository
 
 DBSession = Depends(get_db)
@@ -86,5 +86,19 @@ def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin role required",
+        )
+    return current_user
+
+
+def get_current_instructor(current_user: User = Depends(get_current_user)) -> User:
+    """Require the bearer token to belong to an instructor or admin user.
+
+    Admins are intentionally allowed through every instructor route so they
+    can manage any course on the platform.
+    """
+    if current_user.role not in (ROLE_INSTRUCTOR, ROLE_ADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Instructor role required",
         )
     return current_user

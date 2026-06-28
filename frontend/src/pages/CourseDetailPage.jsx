@@ -1,7 +1,8 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import PlaylistSidebar from "../components/PlaylistSidebar.jsx";
+import QuizPanel from "../components/QuizPanel.jsx";
 import Spinner from "../components/Spinner.jsx";
 import VideoPlayer from "../components/VideoPlayer.jsx";
 import { useProgress } from "../context/ProgressContext.jsx";
@@ -12,7 +13,12 @@ import { courseService } from "../services/courseService.js";
 export default function CourseDetailPage() {
   const { id } = useParams();
   const courseId = Number(id);
-  const { loadCourse, reset, course: ctxCourse } = useVideoPlayer();
+  const {
+    loadCourse,
+    reset,
+    course: ctxCourse,
+    currentQuiz,
+  } = useVideoPlayer();
   const { loadCourseProgress, summary } = useProgress();
 
   const fetcher = useCallback(() => courseService.get(courseId), [courseId]);
@@ -34,6 +40,12 @@ export default function CourseDetailPage() {
     return () => reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [course, summary?.last_video_id]);
+
+  const activeQuizSectionTitle = useMemo(() => {
+    if (!currentQuiz || !ctxCourse) return null;
+    const sec = ctxCourse.sections?.find((s) => s.id === currentQuiz.sectionId);
+    return sec?.title || null;
+  }, [currentQuiz, ctxCourse]);
 
   if (loading) {
     return (
@@ -103,7 +115,15 @@ export default function CourseDetailPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="min-w-0">
-          <VideoPlayer />
+          {currentQuiz ? (
+            <QuizPanel
+              key={currentQuiz.quizId}
+              quizId={currentQuiz.quizId}
+              sectionTitle={activeQuizSectionTitle}
+            />
+          ) : (
+            <VideoPlayer />
+          )}
         </div>
         <div className="lg:sticky lg:top-20 lg:self-start">
           <PlaylistSidebar />

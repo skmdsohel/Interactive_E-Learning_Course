@@ -5,9 +5,12 @@ import CourseDetailPage from "../pages/CourseDetailPage.jsx";
 import CoursesPage from "../pages/CoursesPage.jsx";
 import HealthPage from "../pages/HealthPage.jsx";
 import HomePage from "../pages/HomePage.jsx";
+import InstructorCourseEditorPage from "../pages/InstructorCourseEditorPage.jsx";
+import InstructorPage from "../pages/InstructorPage.jsx";
 import LoginPage from "../pages/LoginPage.jsx";
 import NotFoundPage from "../pages/NotFoundPage.jsx";
 import AdminRoute from "./AdminRoute.jsx";
+import InstructorRoute from "./InstructorRoute.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 
 export default function AppRoutes() {
@@ -24,6 +27,22 @@ export default function AppRoutes() {
         }
       />
       <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/instructor"
+        element={
+          <InstructorRoute>
+            <InstructorPage />
+          </InstructorRoute>
+        }
+      />
+      <Route
+        path="/instructor/courses/:id"
+        element={
+          <InstructorRoute>
+            <InstructorCourseEditorPage />
+          </InstructorRoute>
+        }
+      />
       <Route
         path="/health"
         element={
