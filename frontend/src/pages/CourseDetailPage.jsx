@@ -46,7 +46,7 @@ export default function CourseDetailPage() {
   if (error) {
     return (
       <div className="space-y-3">
-        <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-2xl border border-danger/30 bg-danger-soft p-4 text-sm text-danger-soft-fg">
           Failed to load course.
         </div>
         <Link to="/courses" className="text-sm font-medium text-brand-700 hover:text-brand-600">
@@ -64,36 +64,36 @@ export default function CourseDetailPage() {
 
   return (
     <section className="space-y-6">
-      <div className="flex items-center gap-3 text-sm text-slate-500">
-        <Link to="/courses" className="hover:text-slate-900">
+      <div className="flex items-center gap-2 text-sm text-fg-subtle">
+        <Link to="/courses" className="hover:text-fg">
           Courses
         </Link>
-        <span>/</span>
-        <span className="truncate text-slate-900">{course.title}</span>
+        <span className="text-line-strong">/</span>
+        <span className="truncate text-fg">{course.title}</span>
       </div>
 
       <header className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight">{course.title}</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-fg">{course.title}</h1>
         {course.instructor && (
-          <p className="text-sm text-slate-500">by {course.instructor}</p>
+          <p className="text-sm text-fg-subtle">by {course.instructor}</p>
         )}
         {course.description && (
-          <p className="mt-2 text-sm text-slate-700">{course.description}</p>
+          <p className="mt-2 max-w-3xl text-sm text-fg-muted">{course.description}</p>
         )}
 
         {summary && total > 0 && (
-          <div className="mt-3 max-w-md">
-            <div className="flex items-center justify-between text-xs text-slate-600">
+          <div className="mt-4 max-w-md">
+            <div className="flex items-center justify-between text-xs text-fg-muted">
               <span>
-                <span className="font-semibold text-slate-900">{percent}%</span> complete
+                <span className="font-semibold text-fg">{percent}%</span> complete
               </span>
               <span>
                 {completed} / {total} videos
               </span>
             </div>
-            <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full bg-emerald-500 transition-all"
+                className="h-full bg-success transition-all duration-500"
                 style={{ width: `${percent}%` }}
               />
             </div>
@@ -105,7 +105,7 @@ export default function CourseDetailPage() {
         <div className="min-w-0">
           <VideoPlayer />
         </div>
-        <div className="lg:sticky lg:top-4 lg:self-start">
+        <div className="lg:sticky lg:top-20 lg:self-start">
           <PlaylistSidebar />
         </div>
       </div>

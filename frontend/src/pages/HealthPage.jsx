@@ -11,11 +11,11 @@ export default function HealthPage() {
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">API health</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-fg">API health</h1>
         <button
           type="button"
           onClick={refetch}
-          className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+          className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-medium text-brand-fg shadow-sm transition hover:bg-brand-700"
         >
           Refresh
         </button>
@@ -24,7 +24,7 @@ export default function HealthPage() {
       {loading && <Spinner />}
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-2xl border border-danger/30 bg-danger-soft p-4 text-sm text-danger-soft-fg">
           Failed to reach the API.
           <pre className="mt-2 whitespace-pre-wrap text-xs">
             {error?.message || String(error)}
@@ -47,11 +47,11 @@ export default function HealthPage() {
 
 function Field({ label, value, highlight }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <dt className="text-xs uppercase tracking-wide text-slate-500">{label}</dt>
+    <div className="rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-card)]">
+      <dt className="text-xs uppercase tracking-wide text-fg-subtle">{label}</dt>
       <dd
         className={`mt-1 text-sm font-medium ${
-          highlight ? "text-emerald-700" : "text-slate-900"
+          highlight ? "text-success" : "text-fg"
         }`}
       >
         {value}

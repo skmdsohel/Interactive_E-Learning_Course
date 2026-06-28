@@ -7,6 +7,7 @@ import App from "./App.jsx";
 import { AppProvider } from "./context/AppContext.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { ProgressProvider } from "./context/ProgressContext.jsx";
+import { ThemeProvider } from "./context/ThemeContext.jsx";
 import { VideoPlayerProvider } from "./context/VideoPlayerContext.jsx";
 import "./index.css";
 
@@ -14,18 +15,20 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <BrowserRouter>
-        <AuthProvider>
-          <ProgressProvider>
-            <AppProvider>
-              <VideoPlayerProvider>
-                <App />
-              </VideoPlayerProvider>
-            </AppProvider>
-          </ProgressProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </GoogleOAuthProvider>
+    <ThemeProvider>
+      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+        <BrowserRouter>
+          <AuthProvider>
+            <ProgressProvider>
+              <AppProvider>
+                <VideoPlayerProvider>
+                  <App />
+                </VideoPlayerProvider>
+              </AppProvider>
+            </ProgressProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </GoogleOAuthProvider>
+    </ThemeProvider>
   </StrictMode>
 );

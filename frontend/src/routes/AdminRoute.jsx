@@ -17,9 +17,9 @@ export default function AdminRoute({ children }) {
   if (!isAdmin) {
     return (
       <section className="mx-auto max-w-md py-12">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <h1 className="text-lg font-semibold text-red-800">Admins only</h1>
-          <p className="mt-2 text-sm text-red-700">
+        <div className="rounded-2xl border border-danger/30 bg-danger-soft p-6 text-center">
+          <h1 className="text-lg font-semibold text-danger-soft-fg">Admins only</h1>
+          <p className="mt-2 text-sm text-danger-soft-fg/90">
             This page requires the admin role on your account.
           </p>
         </div>

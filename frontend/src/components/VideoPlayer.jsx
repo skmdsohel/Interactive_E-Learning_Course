@@ -22,7 +22,7 @@ export default function VideoPlayer() {
 
   if (!currentVideo) {
     return (
-      <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-slate-900 text-slate-400">
+      <div className="flex aspect-video w-full items-center justify-center rounded-2xl border border-line bg-black/95 text-sm text-fg-subtle">
         Select a video to start playing
       </div>
     );
@@ -58,8 +58,8 @@ export default function VideoPlayer() {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="overflow-hidden rounded-lg bg-black shadow">
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-2xl bg-black shadow-[var(--shadow-pop)] ring-1 ring-line">
         <video
           ref={videoRef}
           key={currentVideo.id}
@@ -78,10 +78,10 @@ export default function VideoPlayer() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-xs uppercase tracking-wide text-slate-500">
+          <p className="text-xs uppercase tracking-wide text-fg-subtle">
             {currentVideo.sectionTitle}
           </p>
-          <h2 className="truncate text-lg font-semibold text-slate-900">
+          <h2 className="truncate text-lg font-semibold text-fg">
             {currentVideo.title}
           </h2>
         </div>
@@ -90,7 +90,7 @@ export default function VideoPlayer() {
             type="button"
             onClick={playPrevious}
             disabled={!hasPrevious}
-            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full border border-line bg-surface px-4 py-1.5 text-sm font-medium text-fg-muted transition hover:text-fg hover:border-line-strong disabled:cursor-not-allowed disabled:opacity-50"
           >
             ← Previous
           </button>
@@ -98,7 +98,7 @@ export default function VideoPlayer() {
             type="button"
             onClick={playNext}
             disabled={!hasNext}
-            className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-medium text-brand-fg shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Next →
           </button>
@@ -106,7 +106,7 @@ export default function VideoPlayer() {
       </div>
 
       {currentVideo.description && (
-        <p className="text-sm text-slate-600">{currentVideo.description}</p>
+        <p className="text-sm text-fg-muted">{currentVideo.description}</p>
       )}
     </div>
   );

@@ -11,15 +11,15 @@ export default function CoursesPage() {
 
   return (
     <section className="space-y-6">
-      <div className="flex items-end justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">All courses</h1>
-          <p className="text-sm text-slate-600">Browse the catalog and pick a course to start learning.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-fg">All courses</h1>
+          <p className="mt-1 text-sm text-fg-subtle">Browse the catalog and pick a course to start learning.</p>
         </div>
         <button
           type="button"
           onClick={refetch}
-          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="rounded-full border border-line bg-surface px-4 py-1.5 text-sm font-medium text-fg-muted transition hover:text-fg hover:border-line-strong"
         >
           Refresh
         </button>
@@ -28,14 +28,16 @@ export default function CoursesPage() {
       {loading && <Spinner label="Loading courses…" />}
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-2xl border border-danger/30 bg-danger-soft p-4 text-sm text-danger-soft-fg">
           Failed to load courses. Is the backend running?
         </div>
       )}
 
       {!loading && !error && data?.length === 0 && (
-        <div className="rounded-md border border-slate-200 bg-white p-8 text-center text-slate-600">
-          No courses yet. Drop videos under <code>backend/storage/videos/</code> and run the seed script.
+        <div className="rounded-2xl border border-dashed border-line bg-surface p-10 text-center text-fg-subtle">
+          No courses yet. Drop videos under{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5 text-fg-muted">backend/storage/videos/</code>
+          {" "}and trigger a sync.
         </div>
       )}
 

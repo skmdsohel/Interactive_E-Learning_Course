@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext.jsx";
+import { useTheme } from "../context/ThemeContext.jsx";
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, signInWithGoogle, loading } = useAuth();
+  const { resolvedTheme } = useTheme();
   const [error, setError] = useState(null);
 
   const from = location.state?.from?.pathname || "/";
@@ -39,15 +41,23 @@ export default function LoginPage() {
 
   return (
     <section className="mx-auto max-w-md py-10">
-      <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Sign in</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Use your Google account to continue.
-        </p>
+      <div className="rounded-3xl border border-line bg-surface p-8 shadow-[var(--shadow-card)]">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-brand-fg">
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4Z" />
+              <path d="M5 17h11" />
+            </svg>
+          </span>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-fg">Welcome back</h1>
+            <p className="text-sm text-fg-subtle">Sign in to continue learning.</p>
+          </div>
+        </div>
 
-        <div className="mt-6 flex flex-col items-center gap-3">
+        <div className="mt-8 flex flex-col items-center gap-3">
           {!CLIENT_ID ? (
-            <div className="w-full rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            <div className="w-full rounded-2xl border border-warning/30 bg-warning-soft p-4 text-sm text-warning-soft-fg">
               <p className="font-semibold">Google sign-in is not configured.</p>
               <p className="mt-1">
                 Set <code>VITE_GOOGLE_CLIENT_ID</code> in <code>frontend/.env</code> and{" "}
@@ -59,22 +69,22 @@ export default function LoginPage() {
               onSuccess={handleSuccess}
               onError={() => setError("Google sign-in was cancelled or failed.")}
               useOneTap={false}
-              theme="filled_blue"
+              theme={resolvedTheme === "dark" ? "filled_black" : "outline"}
               size="large"
-              shape="rectangular"
+              shape="pill"
             />
           )}
 
-          {loading && <p className="text-xs text-slate-500">Signing in…</p>}
+          {loading && <p className="text-xs text-fg-subtle">Signing in…</p>}
 
           {error && (
-            <div className="w-full rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="w-full rounded-2xl border border-danger/30 bg-danger-soft p-3 text-sm text-danger-soft-fg">
               {error}
             </div>
           )}
         </div>
 
-        <p className="mt-6 text-xs text-slate-500">
+        <p className="mt-8 text-xs text-fg-subtle">
           By signing in you agree to use this app for personal learning only.
         </p>
       </div>

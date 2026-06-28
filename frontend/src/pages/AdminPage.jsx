@@ -66,14 +66,14 @@ export default function AdminPage() {
   return (
     <section className="space-y-8">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">Admin</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <h1 className="text-3xl font-bold tracking-tight text-fg">Admin</h1>
+        <p className="mt-1 text-sm text-fg-subtle">
           Catalog stats, content sync, and user list.
         </p>
       </header>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="rounded-2xl border border-danger/30 bg-danger-soft p-3 text-sm text-danger-soft-fg">
           {error}
         </div>
       )}
@@ -88,18 +88,17 @@ export default function AdminPage() {
         </div>
       )}
 
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-900">Content sync</h2>
-        <p className="mt-1 text-xs text-slate-600">
-          Re-scans <code>storage/videos/</code> and upserts the catalog. Stable
-          IDs are preserved.
+      <div className="rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+        <h2 className="text-sm font-semibold text-fg">Content sync</h2>
+        <p className="mt-1 text-xs text-fg-subtle">
+          Re-scans <code className="rounded bg-muted px-1 py-0.5 text-fg-muted">storage/videos/</code> and upserts the catalog. Stable IDs are preserved.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => handleSync(false)}
             disabled={syncing}
-            className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+            className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-medium text-brand-fg shadow-sm transition hover:bg-brand-700 disabled:opacity-50"
           >
             {syncing ? "Syncing…" : "Sync now"}
           </button>
@@ -107,40 +106,40 @@ export default function AdminPage() {
             type="button"
             onClick={() => handleSync(true)}
             disabled={syncing}
-            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="rounded-full border border-line bg-surface px-4 py-1.5 text-sm font-medium text-fg-muted transition hover:text-fg hover:border-line-strong disabled:opacity-50"
           >
             Sync &amp; prune missing
           </button>
         </div>
         {lastSync && (
-          <pre className="mt-3 overflow-x-auto rounded bg-slate-900 p-3 text-[11px] text-slate-100">
+          <pre className="mt-3 overflow-x-auto rounded-xl bg-elevated p-3 text-[11px] text-fg-muted ring-1 ring-line">
             {JSON.stringify(lastSync, null, 2)}
           </pre>
         )}
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white">
-        <header className="border-b border-slate-200 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">
-            Users ({users.length})
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]">
+        <header className="border-b border-line px-5 py-4">
+          <h2 className="text-sm font-semibold text-fg">
+            Users <span className="text-fg-subtle">({users.length})</span>
           </h2>
         </header>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600">
+            <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-fg-muted">
               <tr>
-                <th className="px-4 py-2">ID</th>
-                <th className="px-4 py-2">User</th>
-                <th className="px-4 py-2">Email</th>
-                <th className="px-4 py-2">Role</th>
-                <th className="px-4 py-2">Joined</th>
+                <th className="px-5 py-2.5">ID</th>
+                <th className="px-5 py-2.5">User</th>
+                <th className="px-5 py-2.5">Email</th>
+                <th className="px-5 py-2.5">Role</th>
+                <th className="px-5 py-2.5">Joined</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-line">
               {users.map((u) => (
-                <tr key={u.id}>
-                  <td className="px-4 py-2 text-slate-500">{u.id}</td>
-                  <td className="px-4 py-2">
+                <tr key={u.id} className="hover:bg-muted/40">
+                  <td className="px-5 py-3 text-fg-subtle">{u.id}</td>
+                  <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
                       {u.picture_url ? (
                         <img
@@ -150,25 +149,25 @@ export default function AdminPage() {
                           className="h-6 w-6 rounded-full"
                         />
                       ) : (
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-300 text-[11px] font-semibold text-white">
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-fg-muted">
                           {(u.name || u.email || "?")[0].toUpperCase()}
                         </span>
                       )}
-                      <span className="text-slate-900">{u.name || "—"}</span>
+                      <span className="text-fg">{u.name || "—"}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-2 text-slate-700">{u.email}</td>
-                  <td className="px-4 py-2">
+                  <td className="px-5 py-3 text-fg-muted">{u.email}</td>
+                  <td className="px-5 py-3">
                     <RoleBadge role={u.role} />
                   </td>
-                  <td className="px-4 py-2 text-xs text-slate-500">
+                  <td className="px-5 py-3 text-xs text-fg-subtle">
                     {new Date(u.created_at).toLocaleString()}
                   </td>
                 </tr>
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+                  <td colSpan={5} className="px-5 py-10 text-center text-fg-subtle">
                     No users yet.
                   </td>
                 </tr>
@@ -183,9 +182,9 @@ export default function AdminPage() {
 
 function StatCard({ label, value }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
+    <div className="rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-card)]">
+      <p className="text-xs uppercase tracking-wide text-fg-subtle">{label}</p>
+      <p className="mt-1.5 text-2xl font-bold text-fg">{value}</p>
     </div>
   );
 }
@@ -196,8 +195,8 @@ function RoleBadge({ role }) {
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
         isAdmin
-          ? "bg-purple-100 text-purple-700"
-          : "bg-slate-100 text-slate-600"
+          ? "bg-accent-soft text-accent-soft-fg"
+          : "bg-muted text-fg-muted"
       }`}
     >
       {role}
