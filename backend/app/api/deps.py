@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import TokenError, decode_access_token
 from app.database import get_db
-from app.models.user import User
+from app.models.user import ROLE_ADMIN, User
 from app.repositories.user_repository import UserRepository
 
 DBSession = Depends(get_db)
@@ -78,3 +78,13 @@ def get_current_user_optional(
     db: Session = Depends(get_db),
 ) -> Optional[User]:
     return _user_from_credentials(credentials, db, required=False)
+
+
+def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Require the bearer token to belong to an admin user."""
+    if current_user.role != ROLE_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required",
+        )
+    return current_user

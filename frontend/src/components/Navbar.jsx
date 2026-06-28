@@ -8,7 +8,7 @@ const linkInactive = "text-slate-600 hover:text-slate-900 hover:bg-slate-100";
 const linkActive = "bg-brand-50 text-brand-700";
 
 export default function Navbar() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, isAdmin, user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = () => {
@@ -42,14 +42,26 @@ export default function Navbar() {
           >
             Courses
           </NavLink>
-          <NavLink
-            to="/health"
-            className={({ isActive }) =>
-              `${linkBase} ${isActive ? linkActive : linkInactive}`
-            }
-          >
-            Health
-          </NavLink>
+          {isAdmin && (
+            <>
+              <NavLink
+                to="/admin"
+                className={({ isActive }) =>
+                  `${linkBase} ${isActive ? linkActive : linkInactive}`
+                }
+              >
+                Admin
+              </NavLink>
+              <NavLink
+                to="/health"
+                className={({ isActive }) =>
+                  `${linkBase} ${isActive ? linkActive : linkInactive}`
+                }
+              >
+                Health
+              </NavLink>
+            </>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -71,6 +83,11 @@ export default function Navbar() {
                 <span className="max-w-[140px] truncate text-sm text-slate-700">
                   {user?.name || user?.email}
                 </span>
+                {isAdmin && (
+                  <span className="rounded-full bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-purple-700">
+                    admin
+                  </span>
+                )}
               </div>
               <button
                 type="button"

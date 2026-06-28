@@ -41,6 +41,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please-use-a-long-random-string}
       JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-10080}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
     ports:
       - "8000:8000"
     volumes:

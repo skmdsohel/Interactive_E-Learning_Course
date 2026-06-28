@@ -23,3 +23,7 @@ class UserRepository(BaseRepository[User]):
     def get_by_email(self, email: str) -> Optional[User]:
         stmt = select(User).where(User.email == email)
         return self.db.execute(stmt).scalar_one_or_none()
+
+    def list_all(self, *, offset: int = 0, limit: int = 200) -> list[User]:
+        stmt = select(User).order_by(User.id.asc()).offset(offset).limit(limit)
+        return list(self.db.execute(stmt).scalars().all())

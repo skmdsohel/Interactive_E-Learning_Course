@@ -73,6 +73,9 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "change-me-in-production-please-use-a-long-random-string"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    # Comma-separated list of emails that are promoted to admin on every
+    # successful Google sign-in. Anyone NOT in this list is a normal user.
+    ADMIN_EMAILS: str = ""
 
     @computed_field  # type: ignore[misc]
     @property
@@ -86,6 +89,11 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> List[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def admin_emails_set(self) -> set[str]:
+        return {e.strip().lower() for e in self.ADMIN_EMAILS.split(",") if e.strip()}
 
 
 @lru_cache(maxsize=1)
