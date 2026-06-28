@@ -3,6 +3,8 @@
 Provides a small, typed CRUD surface that concrete repositories can extend.
 Routers should never call this directly — use a service.
 """
+from __future__ import annotations
+
 from typing import Generic, Iterable, Optional, Type, TypeVar
 
 from sqlalchemy import delete, func, select
@@ -25,7 +27,7 @@ class BaseRepository(Generic[ModelT]):
     def get(self, id_: int) -> Optional[ModelT]:
         return self.db.get(self.model, id_)
 
-    def list(self, *, offset: int = 0, limit: int = 50) -> list[ModelT]:
+    def list_items(self, *, offset: int = 0, limit: int = 50) -> list[ModelT]:
         stmt = select(self.model).offset(offset).limit(limit)
         return list(self.db.execute(stmt).scalars().all())
 
