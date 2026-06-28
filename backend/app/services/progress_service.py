@@ -82,15 +82,14 @@ class ProgressService:
         if course is None:
             raise NotFoundError(f"Course {course_id} not found")
 
-        video_ids = [v.id for s in course.sections for v in s.videos]
+        video_ids = [video.id for section in course.sections for video in section.videos]
         rows = self.progress_repo.list_for_videos(user_id, video_ids)
-        by_video = {r.video_id: r for r in rows}
 
         total = len(video_ids)
-        completed = sum(1 for r in rows if r.completed)
+        completed = sum(1 for row in rows if row.completed)
         percent = int(round((completed / total) * 100)) if total else 0
 
-        latest = max(rows, key=lambda r: r.last_watched_at, default=None)
+        latest = max(rows, key=lambda row: row.last_watched_at, default=None)
         last_video_id = latest.video_id if latest else None
         last_position = latest.position_seconds if latest else 0
 
@@ -101,34 +100,33 @@ class ProgressService:
             percent_complete=percent,
             last_video_id=last_video_id,
             last_position_seconds=last_position,
-            videos=[self._row_to_read(r) for r in rows],
+            videos=[self._row_to_read(row) for row in rows],
         )
 
     def list_my_course_progress(self, *, user_id: int) -> list[CourseProgressItem]:
         items: list[CourseProgressItem] = []
-        for course, total, completed, _pos, last_vid in self.progress_repo.list_user_courses_with_progress(user_id):
+        for entry in self.progress_repo.list_user_courses_with_progress(user_id):
+            total = entry.total_videos
+            completed = entry.completed_videos
             percent = int(round((completed / total) * 100)) if total else 0
 
-            # Find last_watched_at by reusing a small lookup.
-            last_row = None
-            if last_vid is not None:
-                last_row = self.progress_repo.get_for(user_id, last_vid)
+            last_row = self.progress_repo.get_for(user_id, entry.last_video_id)
 
             items.append(
                 CourseProgressItem(
-                    course_id=course.id,
-                    course_title=course.title,
-                    course_slug=course.slug,
-                    thumbnail_url=thumbnail_url(course.thumbnail_path),
+                    course_id=entry.course.id,
+                    course_title=entry.course.title,
+                    course_slug=entry.course.slug,
+                    thumbnail_url=thumbnail_url(entry.course.thumbnail_path),
                     total_videos=total,
                     completed_videos=completed,
                     percent_complete=percent,
-                    last_video_id=last_vid,
+                    last_video_id=entry.last_video_id,
                     last_watched_at=last_row.last_watched_at if last_row else None,
                 )
             )
         # Newest activity first.
-        items.sort(key=lambda i: i.last_watched_at or datetime.min, reverse=True)
+        items.sort(key=lambda item: item.last_watched_at or datetime.min, reverse=True)
         return items
 
     @staticmethod
