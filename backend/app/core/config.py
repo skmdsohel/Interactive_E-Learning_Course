@@ -58,6 +58,13 @@ class Settings(BaseSettings):
     # Public URL prefix for static thumbnails (served by FastAPI StaticFiles).
     THUMBNAILS_URL_PREFIX: str = "/static/thumbnails"
 
+    # ---- Content sync ----
+    # When true, on every app startup the videos directory is scanned and the
+    # database catalog is rebuilt to match it. Disable in production.
+    AUTO_SEED_ON_STARTUP: bool = True
+    # When true, courses whose folder was removed from disk are deleted from the DB.
+    AUTO_SEED_PRUNE_MISSING: bool = True
+
     @computed_field  # type: ignore[misc]
     @property
     def DATABASE_URL(self) -> str:

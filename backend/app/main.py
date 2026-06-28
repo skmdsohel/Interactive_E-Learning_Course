@@ -9,6 +9,8 @@ from app.api import api_router
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
+from app.database.session import SessionLocal
+from app.services.content_sync_service import sync_content
 from app.utils.storage import ensure_storage_dirs, thumbnails_dir
 
 
@@ -20,6 +22,12 @@ def create_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         logger.info("Starting %s v%s (env=%s)", settings.APP_NAME, settings.APP_VERSION, settings.APP_ENV)
+        if settings.AUTO_SEED_ON_STARTUP:
+            try:
+                with SessionLocal() as db:
+                    sync_content(db, prune_missing_courses=settings.AUTO_SEED_PRUNE_MISSING)
+            except Exception:  # noqa: BLE001
+                logger.exception("Content sync failed on startup; continuing without it.")
         yield
         logger.info("Shutting down %s", settings.APP_NAME)
 
