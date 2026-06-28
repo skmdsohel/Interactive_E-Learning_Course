@@ -1,18 +1,22 @@
 import { useEffect, useRef } from "react";
 
+import { useProgress } from "../context/ProgressContext.jsx";
 import { useVideoPlayer } from "../context/VideoPlayerContext.jsx";
 import { videoService } from "../services/videoService.js";
 
 export default function VideoPlayer() {
   const { currentVideo, playNext, hasNext, hasPrevious, playPrevious } =
     useVideoPlayer();
+  const { byVideoId, recordPosition, markComplete } = useProgress();
   const videoRef = useRef(null);
+  const resumedRef = useRef(null); // video id we already attempted to resume
 
   // When the selected video changes, reload the <video> element so the
   // browser issues a fresh Range request against the new stream URL.
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.load();
+      resumedRef.current = null;
     }
   }, [currentVideo?.id]);
 
@@ -24,6 +28,35 @@ export default function VideoPlayer() {
     );
   }
 
+  const handleLoadedMetadata = () => {
+    const el = videoRef.current;
+    if (!el || resumedRef.current === currentVideo.id) return;
+    resumedRef.current = currentVideo.id;
+    const saved = byVideoId?.[currentVideo.id];
+    if (!saved) return;
+    // Skip resume if already completed or essentially at the end.
+    const duration = el.duration || saved.position_seconds + 10;
+    if (saved.completed) return;
+    if (saved.position_seconds > 2 && saved.position_seconds < duration - 5) {
+      try {
+        el.currentTime = saved.position_seconds;
+      } catch {
+        /* ignore — some sources disallow seeking before play */
+      }
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    const el = videoRef.current;
+    if (!el) return;
+    recordPosition(currentVideo.id, el.currentTime, el.duration || null);
+  };
+
+  const handleEnded = async () => {
+    await markComplete(currentVideo.id);
+    if (hasNext) playNext();
+  };
+
   return (
     <div className="space-y-3">
       <div className="overflow-hidden rounded-lg bg-black shadow">
@@ -34,9 +67,9 @@ export default function VideoPlayer() {
           controls
           preload="metadata"
           playsInline
-          onEnded={() => {
-            if (hasNext) playNext();
-          }}
+          onLoadedMetadata={handleLoadedMetadata}
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={handleEnded}
         >
           <source src={videoService.streamUrl(currentVideo.id)} />
           Your browser does not support the video tag.

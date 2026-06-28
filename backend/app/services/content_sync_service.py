@@ -13,6 +13,11 @@ Two on-disk layouts are supported:
 
 The optional leading `NN-` (digits + separator) sets `order_index` and is
 stripped from the displayed title.
+
+Sync is **upsert by natural key** so DB ids stay stable across restarts:
+  * Section is keyed by (course_id, title)
+  * Video   is keyed by (section_id, file_path)
+This matters because user progress rows reference video.id.
 """
 from __future__ import annotations
 
@@ -58,15 +63,19 @@ class SyncStats:
     courses_added: int = 0
     courses_updated: int = 0
     courses_removed: int = 0
+    sections_added: int = 0
+    sections_removed: int = 0
+    videos_added: int = 0
+    videos_removed: int = 0
     videos_indexed: int = 0
 
 
 def sync_content(db: Session, *, prune_missing_courses: bool = False) -> SyncStats:
     """Mirror the on-disk video tree into the database.
 
-    Idempotent. Re-running replaces each course's sections/videos so the DB
-    always reflects the filesystem. Courses that no longer have a directory
-    are removed only when `prune_missing_courses=True`.
+    Idempotent and id-stable: existing sections/videos are kept and only the
+    metadata (title, order_index) is refreshed. New entries are inserted,
+    and entries whose files no longer exist are removed.
     """
     root = videos_dir()
     if not root.exists():
@@ -99,43 +108,7 @@ def sync_content(db: Session, *, prune_missing_courses: bool = False) -> SyncSta
             course.thumbnail_path = _find_thumbnail(slug) or course.thumbnail_path
             stats.courses_updated += 1
 
-        # Replace sections/videos to keep this simple and idempotent.
-        for s in list(course.sections):
-            db.delete(s)
-        db.flush()
-
-        section_dirs = sorted(p for p in course_dir.iterdir() if p.is_dir())
-
-        if section_dirs:
-            # Nested layout: course/<section>/<video>
-            for s_idx, section_dir in enumerate(section_dirs, start=1):
-                videos = sorted(
-                    p for p in section_dir.iterdir() if p.suffix.lower() in VIDEO_EXTS
-                )
-                if not videos:
-                    continue
-                section = Section(
-                    course_id=course.id,
-                    title=_humanize(section_dir.name),
-                    order_index=_order_index(section_dir.name, s_idx),
-                )
-                db.add(section)
-                db.flush()
-                _add_videos(db, section, videos, root)
-                stats.videos_indexed += len(videos)
-        else:
-            # Flat layout: course/<video>
-            videos = sorted(p for p in course_dir.iterdir() if p.suffix.lower() in VIDEO_EXTS)
-            if videos:
-                section = Section(
-                    course_id=course.id,
-                    title=DEFAULT_SECTION_TITLE,
-                    order_index=1,
-                )
-                db.add(section)
-                db.flush()
-                _add_videos(db, section, videos, root)
-                stats.videos_indexed += len(videos)
+        _sync_course_tree(db, course, course_dir, root, stats)
 
     if prune_missing_courses:
         existing = db.execute(select(Course)).scalars().all()
@@ -146,24 +119,105 @@ def sync_content(db: Session, *, prune_missing_courses: bool = False) -> SyncSta
 
     db.commit()
     logger.info(
-        "Content sync: +%d courses, ~%d updated, -%d removed, %d videos indexed",
+        "Content sync: +%d courses, ~%d updated, -%d removed, "
+        "+%d sections / -%d, +%d videos / -%d (indexed %d)",
         stats.courses_added,
         stats.courses_updated,
         stats.courses_removed,
+        stats.sections_added,
+        stats.sections_removed,
+        stats.videos_added,
+        stats.videos_removed,
         stats.videos_indexed,
     )
     return stats
 
 
-def _add_videos(db: Session, section: Section, files: list[Path], root: Path) -> None:
-    for v_idx, vf in enumerate(files, start=1):
-        rel = vf.relative_to(root).as_posix()
-        db.add(
-            Video(
-                section_id=section.id,
-                title=_humanize(vf.stem),
-                file_path=rel,
-                order_index=_order_index(vf.stem, v_idx),
+def _sync_course_tree(
+    db: Session,
+    course: Course,
+    course_dir: Path,
+    root: Path,
+    stats: SyncStats,
+) -> None:
+    """Build the desired (section_title -> [video_files]) map and reconcile."""
+    desired: dict[str, tuple[int, list[Path]]] = {}
+
+    section_dirs = sorted(p for p in course_dir.iterdir() if p.is_dir())
+    if section_dirs:
+        for s_idx, section_dir in enumerate(section_dirs, start=1):
+            videos = sorted(
+                p for p in section_dir.iterdir() if p.suffix.lower() in VIDEO_EXTS
             )
+            if not videos:
+                continue
+            desired[_humanize(section_dir.name)] = (
+                _order_index(section_dir.name, s_idx),
+                videos,
+            )
+    else:
+        videos = sorted(
+            p for p in course_dir.iterdir() if p.suffix.lower() in VIDEO_EXTS
         )
+        if videos:
+            desired[DEFAULT_SECTION_TITLE] = (1, videos)
+
+    existing_sections = {s.title: s for s in course.sections}
+
+    # Remove sections that no longer exist on disk (cascades to their videos).
+    for stale_title in set(existing_sections) - set(desired):
+        db.delete(existing_sections[stale_title])
+        stats.sections_removed += 1
+    db.flush()
+
+    for sec_title, (sec_order, files) in desired.items():
+        section = existing_sections.get(sec_title)
+        if section is None:
+            section = Section(
+                course_id=course.id,
+                title=sec_title,
+                order_index=sec_order,
+            )
+            db.add(section)
+            db.flush()
+            stats.sections_added += 1
+        else:
+            section.order_index = sec_order
+
+        _sync_section_videos(db, section, files, root, stats)
+        stats.videos_indexed += len(files)
+
+
+def _sync_section_videos(
+    db: Session,
+    section: Section,
+    files: list[Path],
+    root: Path,
+    stats: SyncStats,
+) -> None:
+    desired_paths = {f.relative_to(root).as_posix(): (idx, f) for idx, f in enumerate(files, 1)}
+    existing = {v.file_path: v for v in section.videos}
+
+    for stale_path in set(existing) - set(desired_paths):
+        db.delete(existing[stale_path])
+        stats.videos_removed += 1
+    db.flush()
+
+    for rel, (idx, vf) in desired_paths.items():
+        title = _humanize(vf.stem)
+        order = _order_index(vf.stem, idx)
+        video = existing.get(rel)
+        if video is None:
+            db.add(
+                Video(
+                    section_id=section.id,
+                    title=title,
+                    file_path=rel,
+                    order_index=order,
+                )
+            )
+            stats.videos_added += 1
+        else:
+            video.title = title
+            video.order_index = order
     db.flush()
