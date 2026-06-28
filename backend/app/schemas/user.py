@@ -12,7 +12,7 @@ class UserRead(ORMModel):
     email: EmailStr
     name: Optional[str] = None
     picture_url: Optional[str] = None
-    role: str = "user"
+    role: str = "learner"
     created_at: datetime
     updated_at: datetime
 

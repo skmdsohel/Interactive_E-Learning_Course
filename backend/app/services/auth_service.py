@@ -9,7 +9,7 @@ from app.core.config import settings
 from app.core.exceptions import AppException
 from app.core.logging import get_logger
 from app.core.security import create_access_token
-from app.models.user import ROLE_ADMIN, ROLE_USER, User
+from app.models.user import ROLE_ADMIN, ROLE_LEARNER, User
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import TokenResponse, UserRead
 
@@ -77,7 +77,7 @@ class AuthService:
         # Re-evaluate role from configuration on every sign-in so the env-driven
         # ADMIN_EMAILS list stays authoritative.
         desired_role = (
-            ROLE_ADMIN if email.lower() in settings.admin_emails_set else ROLE_USER
+            ROLE_ADMIN if email.lower() in settings.admin_emails_set else ROLE_LEARNER
         )
         if user.role != desired_role:
             user.role = desired_role
