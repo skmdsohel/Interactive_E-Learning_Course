@@ -4,13 +4,16 @@ import { BrowserRouter } from "react-router-dom";
 
 import App from "./App.jsx";
 import { AppProvider } from "./context/AppContext.jsx";
+import { VideoPlayerProvider } from "./context/VideoPlayerContext.jsx";
 import "./index.css";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <AppProvider>
-        <App />
+        <VideoPlayerProvider>
+          <App />
+        </VideoPlayerProvider>
       </AppProvider>
     </BrowserRouter>
   </StrictMode>

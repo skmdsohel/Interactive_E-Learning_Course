@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     DB_POOL_RECYCLE: int = 1800
     DB_ECHO: bool = False
 
+    # ---- Storage ----
+    STORAGE_ROOT: str = "storage"
+    VIDEOS_SUBDIR: str = "videos"
+    THUMBNAILS_SUBDIR: str = "thumbnails"
+    # Bytes per chunk for video range streaming (default 1 MiB).
+    VIDEO_STREAM_CHUNK_SIZE: int = 1024 * 1024
+    # Public URL prefix for static thumbnails (served by FastAPI StaticFiles).
+    THUMBNAILS_URL_PREFIX: str = "/static/thumbnails"
+
     @computed_field  # type: ignore[misc]
     @property
     def DATABASE_URL(self) -> str:

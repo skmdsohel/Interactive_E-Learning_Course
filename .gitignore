@@ -32,3 +32,9 @@ Thumbs.db
 # ===== Docker =====
 *.pid
 *.log
+
+# ===== Storage (binary media) =====
+backend/storage/videos/*
+!backend/storage/videos/.gitkeep
+backend/storage/thumbnails/*
+!backend/storage/thumbnails/.gitkeep

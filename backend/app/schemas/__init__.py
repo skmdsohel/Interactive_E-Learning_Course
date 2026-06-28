@@ -1,4 +1,13 @@
 """Pydantic schemas package (request/response DTOs)."""
 from app.schemas.common import ErrorResponse, HealthResponse, Message
+from app.schemas.course import CourseListItem, CourseRead, SectionRead, VideoRead
 
-__all__ = ["ErrorResponse", "HealthResponse", "Message"]
+__all__ = [
+    "ErrorResponse",
+    "HealthResponse",
+    "Message",
+    "CourseListItem",
+    "CourseRead",
+    "SectionRead",
+    "VideoRead",
+]

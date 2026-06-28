@@ -24,6 +24,14 @@ export default function Navbar() {
             Home
           </NavLink>
           <NavLink
+            to="/courses"
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? linkActive : linkInactive}`
+            }
+          >
+            Courses
+          </NavLink>
+          <NavLink
             to="/health"
             className={({ isActive }) =>
               `${linkBase} ${isActive ? linkActive : linkInactive}`

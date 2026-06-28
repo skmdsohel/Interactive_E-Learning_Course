@@ -3,16 +3,19 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api import api_router
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
+from app.utils.storage import ensure_storage_dirs, thumbnails_dir
 
 
 def create_app() -> FastAPI:
     configure_logging()
     logger = get_logger(__name__)
+    ensure_storage_dirs()
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -40,6 +43,13 @@ def create_app() -> FastAPI:
 
     register_exception_handlers(app)
     app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+
+    # Static thumbnails (course cover images).
+    app.mount(
+        settings.THUMBNAILS_URL_PREFIX,
+        StaticFiles(directory=str(thumbnails_dir())),
+        name="thumbnails",
+    )
 
     @app.get("/", tags=["root"], summary="Service root")
     def root() -> dict[str, str]:
