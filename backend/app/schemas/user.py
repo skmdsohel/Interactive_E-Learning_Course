@@ -1,6 +1,6 @@
 """User-related Pydantic schemas."""
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -19,6 +19,20 @@ class UserRead(ORMModel):
 
 class GoogleAuthRequest(BaseModel):
     id_token: str = Field(..., description="Google-issued ID token (JWT) from the client SDK.")
+    role: Optional[Literal["learner", "instructor"]] = Field(
+        default=None,
+        description=(
+            "Role chosen during sign-up. Only applied for brand-new accounts. "
+            "Existing accounts keep their stored role. Admins (set via the "
+            "ADMIN_EMAILS env var) always override this."
+        ),
+    )
+
+
+class RoleChoiceRequest(BaseModel):
+    role: Literal["learner", "instructor"] = Field(
+        ..., description="Role to switch to. Only allowed while the account is unassigned."
+    )
 
 
 class TokenResponse(BaseModel):

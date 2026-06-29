@@ -11,6 +11,7 @@ export default function LoginPage() {
   const location = useLocation();
   const { isAuthenticated, signInWithGoogle, loading } = useAuth();
   const [error, setError] = useState(null);
+  const [signupRole, setSignupRole] = useState("learner");
 
   const from = location.state?.from?.pathname || "/";
 
@@ -25,7 +26,7 @@ export default function LoginPage() {
       return;
     }
     try {
-      await signInWithGoogle(credentialResponse.credential);
+      await signInWithGoogle(credentialResponse.credential, signupRole);
       navigate(from, { replace: true });
     } catch (err) {
       const msg =
@@ -36,6 +37,19 @@ export default function LoginPage() {
       setError(msg);
     }
   };
+
+  const roleOptions = [
+    {
+      value: "learner",
+      label: "Learner",
+      hint: "Watch lessons, take quizzes, and earn certificates.",
+    },
+    {
+      value: "instructor",
+      label: "Instructor",
+      hint: "Create courses, upload videos, and manage quizzes.",
+    },
+  ];
 
   return (
     <section className="mx-auto max-w-md py-12">
@@ -49,14 +63,59 @@ export default function LoginPage() {
               </svg>
             </span>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-fg">Welcome back</h1>
-              <p className="text-sm text-fg-subtle">Sign in to continue learning.</p>
+              <h1 className="text-2xl font-bold tracking-tight text-fg">Welcome</h1>
+              <p className="text-sm text-fg-subtle">
+                Sign in or create an account with Google.
+              </p>
             </div>
           </div>
         </div>
 
+        <div className="px-8 pt-6">
+          <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
+            I'm signing up as
+          </p>
+          <p className="mt-1 text-xs text-fg-subtle">
+            New here? Pick a role for your account. Returning users keep the
+            role they already chose.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {roleOptions.map((opt) => {
+              const active = signupRole === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setSignupRole(opt.value)}
+                  className={`rounded-2xl border p-3 text-left text-sm transition ${
+                    active
+                      ? "border-brand-500 bg-brand-soft text-brand-soft-fg shadow-sm"
+                      : "border-line bg-elevated text-fg-muted hover:border-line-strong hover:text-fg"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 font-semibold text-fg">
+                    <span
+                      className={`inline-flex h-4 w-4 items-center justify-center rounded-full border ${
+                        active
+                          ? "border-brand-600 bg-brand-600"
+                          : "border-line"
+                      }`}
+                    >
+                      {active && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-brand-fg" />
+                      )}
+                    </span>
+                    {opt.label}
+                  </div>
+                  <p className="mt-1 text-xs text-fg-subtle">{opt.hint}</p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Auth panel — light surface keeps Google's button visually integrated in both themes. */}
-        <div className="mt-8 border-y border-line bg-[#f8fafc] px-8 py-8 dark:bg-[#e9eef5]">
+        <div className="mt-6 border-y border-line bg-[#f8fafc] px-8 py-8 dark:bg-[#e9eef5]">
           <div className="flex items-center justify-center gap-3 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
             <span className="h-px flex-1 bg-slate-300" />
             <span>Continue with</span>

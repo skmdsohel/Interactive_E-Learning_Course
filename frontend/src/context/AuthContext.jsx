@@ -80,10 +80,10 @@ export function AuthProvider({ children }) {
       });
   }, [token]);
 
-  const signInWithGoogle = useCallback(async (googleIdToken) => {
+  const signInWithGoogle = useCallback(async (googleIdToken, role) => {
     setLoading(true);
     try {
-      const res = await authService.signInWithGoogle(googleIdToken);
+      const res = await authService.signInWithGoogle(googleIdToken, role);
       setToken(res.access_token);
       setUser(res.user);
       writeStored({ token: res.access_token, user: res.user });
@@ -92,6 +92,16 @@ export function AuthProvider({ children }) {
       setLoading(false);
     }
   }, []);
+
+  const chooseRole = useCallback(
+    async (role) => {
+      const updated = await authService.chooseRole(role);
+      setUser(updated);
+      if (token) writeStored({ token, user: updated });
+      return updated;
+    },
+    [token]
+  );
 
   const value = useMemo(
     () => ({
@@ -103,9 +113,10 @@ export function AuthProvider({ children }) {
       canManageCourses: user?.role === "admin" || user?.role === "instructor",
       loading,
       signInWithGoogle,
+      chooseRole,
       logout,
     }),
-    [token, user, loading, signInWithGoogle, logout]
+    [token, user, loading, signInWithGoogle, chooseRole, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
