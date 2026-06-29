@@ -2,10 +2,12 @@ import { useCallback } from "react";
 
 import CourseCard from "../components/CourseCard.jsx";
 import Spinner from "../components/Spinner.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 import useFetch from "../hooks/useFetch.js";
 import { courseService } from "../services/courseService.js";
 
 export default function CoursesPage() {
+  const { canManageCourses } = useAuth();
   const fetcher = useCallback(() => courseService.list(), []);
   const { data, error, loading, refetch } = useFetch(fetcher, []);
 
@@ -35,9 +37,15 @@ export default function CoursesPage() {
 
       {!loading && !error && data?.length === 0 && (
         <div className="rounded-2xl border border-dashed border-line bg-surface p-10 text-center text-fg-subtle">
-          No courses yet. Drop videos under{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5 text-fg-muted">backend/storage/videos/</code>
-          {" "}and trigger a sync.
+          {canManageCourses ? (
+            <>
+              No courses yet. Drop videos under{" "}
+              <code className="rounded bg-muted px-1.5 py-0.5 text-fg-muted">backend/storage/videos/</code>
+              {" "}and trigger a sync.
+            </>
+          ) : (
+            <>No courses are available yet. Please check back soon.</>
+          )}
         </div>
       )}
 
