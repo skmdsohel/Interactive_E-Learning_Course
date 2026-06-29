@@ -18,6 +18,15 @@ export default defineConfig(({ mode }) => {
       host: true,
       port: 5173,
       strictPort: true,
+      // Allow any *.nip.io subdomain (we use it for VM deploys behind Caddy /
+      // nginx). For other custom domains, set VITE_ALLOWED_HOSTS to a comma-
+      // separated list in the environment.
+      allowedHosts: [
+        ".nip.io",
+        ...(env.VITE_ALLOWED_HOSTS
+          ? env.VITE_ALLOWED_HOSTS.split(",").map((h) => h.trim()).filter(Boolean)
+          : []),
+      ],
       proxy: {
         "/api": {
           target: apiTarget,
