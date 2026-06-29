@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.models.course import Course, Section, Video
+from app.models.quiz import Quiz, QuizQuestion
 from app.models.user import ROLE_ADMIN, User
 from app.repositories.course_repository import CourseRepository
 from app.repositories.video_repository import VideoRepository
@@ -39,6 +40,52 @@ from app.utils.storage import thumbnail_url
 
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 _ALLOWED_VIDEO_EXTS = {".mp4", ".webm", ".mov", ".mkv", ".m4v"}
+
+# Placeholder questions seeded for every instructor-created section so the
+# "Edit quiz" UI is immediately available. The instructor then replaces
+# these with real content.
+_DUMMY_QUESTIONS: list[dict] = [
+    {
+        "text": "Replace this with your first question for this section.",
+        "options": [
+            "Option A — replace me",
+            "Option B — replace me",
+            "Option C — replace me",
+            "Option D — replace me",
+        ],
+        "correct_index": 0,
+    },
+    {
+        "text": "Replace this with your second question for this section.",
+        "options": [
+            "Option A — replace me",
+            "Option B — replace me",
+            "Option C — replace me",
+            "Option D — replace me",
+        ],
+        "correct_index": 0,
+    },
+    {
+        "text": "Replace this with your third question for this section.",
+        "options": [
+            "Option A — replace me",
+            "Option B — replace me",
+            "Option C — replace me",
+            "Option D — replace me",
+        ],
+        "correct_index": 0,
+    },
+    {
+        "text": "Replace this with your fourth question for this section.",
+        "options": [
+            "Option A — replace me",
+            "Option B — replace me",
+            "Option C — replace me",
+            "Option D — replace me",
+        ],
+        "correct_index": 0,
+    },
+]
 
 
 def _slugify(text: str) -> str:
@@ -186,6 +233,24 @@ class InstructorService:
             order_index=next_order,
         )
         self.db.add(section)
+        self.db.flush()
+
+        quiz = Quiz(section_id=section.id, title=f"{section.title} quiz")
+        self.db.add(quiz)
+        self.db.flush()
+        for idx, q in enumerate(_DUMMY_QUESTIONS):
+            self.db.add(
+                QuizQuestion(
+                    quiz_id=quiz.id,
+                    position=idx,
+                    text=q["text"],
+                    option_a=q["options"][0],
+                    option_b=q["options"][1],
+                    option_c=q["options"][2],
+                    option_d=q["options"][3],
+                    correct_index=q["correct_index"],
+                )
+            )
         self.db.commit()
         self.db.refresh(section)
         return _section_to_read(section)
