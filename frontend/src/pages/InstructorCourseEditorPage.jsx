@@ -15,6 +15,13 @@ export default function InstructorCourseEditorPage() {
   const [meta, setMeta] = useState({ title: "", description: "", instructor: "" });
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [addingSection, setAddingSection] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -53,6 +60,7 @@ export default function InstructorCourseEditorPage() {
         instructor: meta.instructor || null,
       });
       setCourse(updated);
+      setToast("Course saved successfully.");
     } catch (e) {
       setError(
         e?.response?.data?.error?.message ||
@@ -146,6 +154,17 @@ export default function InstructorCourseEditorPage() {
       {error && (
         <div className="rounded-2xl border border-danger/30 bg-danger-soft p-3 text-sm text-danger-soft-fg">
           {error}
+        </div>
+      )}
+
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full border border-success/40 bg-success-soft px-4 py-2 text-sm font-medium text-success-soft-fg shadow-[var(--shadow-card)]"
+        >
+          <span aria-hidden="true">✓</span>
+          {toast}
         </div>
       )}
 
