@@ -6,7 +6,6 @@ share the same configuration as the application.
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
 
 # Make `app` importable when alembic runs from the `backend/` directory.
 import os
@@ -16,9 +15,12 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from app.core.config import settings  # noqa: E402
 from app.database.base import Base  # noqa: E402
+from app.database.session import engine as app_engine  # noqa: E402
 import app.models  # noqa: F401, E402  -- ensures models are registered on Base.metadata
 
 config = context.config
+# Expose the URL for offline mode; online mode reuses the app engine so it
+# inherits TLS / connect_args (important for PlanetScale, Aiven, RDS, ...).
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 if config.config_file_name is not None:
@@ -40,12 +42,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
-    with connectable.connect() as connection:
+    with app_engine.connect() as connection:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,

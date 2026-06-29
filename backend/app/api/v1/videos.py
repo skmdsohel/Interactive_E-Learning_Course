@@ -1,5 +1,6 @@
 """Video endpoints — metadata and range-aware streaming."""
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import db_session
@@ -22,10 +23,15 @@ def get_video(video_id: int, db: Session = Depends(db_session)) -> VideoRead:
     responses={
         200: {"content": {"video/*": {}}, "description": "Full content"},
         206: {"content": {"video/*": {}}, "description": "Partial content"},
+        302: {"description": "Redirect to remote object storage URL"},
         404: {"description": "Video not found"},
         416: {"description": "Requested range not satisfiable"},
     },
 )
 def stream_video(video_id: int, request: Request, db: Session = Depends(db_session)):
-    video, path = VideoService(db).resolve_file(video_id)
-    return stream_file_with_range(request, path, filename=path.name)
+    video, target = VideoService(db).resolve_stream(video_id)
+    if target.is_local and target.local_path is not None:
+        return stream_file_with_range(request, target.local_path, filename=target.local_path.name)
+    # Remote object (R2 / public CDN): redirect the browser. It will issue its
+    # own Range requests against the signed/public URL.
+    return RedirectResponse(url=target.redirect_url, status_code=302)

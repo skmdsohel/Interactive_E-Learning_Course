@@ -6,9 +6,43 @@ values inside routers, services, or repositories.
 """
 from functools import lru_cache
 from typing import List
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+# Query params that managed MySQL providers include in their copy-paste URLs
+# but PyMySQL/SQLAlchemy don't understand. Stripped silently during
+# normalization so the URL parses cleanly.
+_DROP_QUERY_PARAMS = {"sslaccept", "sslmode", "ssl-mode", "ssl_mode"}
+
+
+def _normalize_mysql_url(url: str) -> str:
+    """Convert a user-pasted MySQL URL into a SQLAlchemy/PyMySQL-friendly form.
+
+    * ``mysql://`` is rewritten to ``mysql+pymysql://``.
+    * Provider-specific SSL hints (``sslaccept=strict`` etc.) are dropped.
+      Actual TLS enablement happens in ``app.database.session`` via
+      ``connect_args`` so it works uniformly across providers.
+    * Ensures ``charset=utf8mb4`` is set if no charset was supplied.
+    """
+    if not url:
+        return url
+    parts = urlsplit(url)
+    scheme = parts.scheme
+    if scheme == "mysql":
+        scheme = "mysql+pymysql"
+    elif scheme.startswith("mysql+") is False and scheme.startswith("mysql"):
+        # e.g. "mysqldb" - leave alone; user knows what they're doing.
+        pass
+    query_pairs = [
+        (k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True)
+        if k.lower() not in _DROP_QUERY_PARAMS
+    ]
+    if not any(k.lower() == "charset" for k, _ in query_pairs):
+        query_pairs.append(("charset", "utf8mb4"))
+    return urlunsplit((scheme, parts.netloc, parts.path, urlencode(query_pairs), parts.fragment))
 
 
 class Settings(BaseSettings):
@@ -39,6 +73,10 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
     # ---- Database (MySQL) ----
+    # When set, takes precedence over the individual DB_* fields. This is the
+    # only safe way to wire a connection string from a managed provider on
+    # Render / Aiven / PlanetScale (which expose a single DATABASE_URL).
+    DATABASE_URL_OVERRIDE: str = Field(default="", alias="DATABASE_URL")
     DB_HOST: str = "localhost"
     DB_PORT: int = 3306
     DB_USER: str = "lms_user"
@@ -48,8 +86,14 @@ class Settings(BaseSettings):
     DB_MAX_OVERFLOW: int = 20
     DB_POOL_RECYCLE: int = 1800
     DB_ECHO: bool = False
+    # Force TLS for the MySQL connection. Auto-enabled when the URL host
+    # matches a known managed provider (PlanetScale, Aiven, Clever Cloud).
+    DB_SSL: bool = False
 
     # ---- Storage ----
+    # `local` keeps everything on disk under STORAGE_ROOT (dev / Docker-compose).
+    # `r2` writes uploaded videos to Cloudflare R2 (or any S3-compatible bucket).
+    STORAGE_BACKEND: str = "local"
     STORAGE_ROOT: str = "storage"
     VIDEOS_SUBDIR: str = "videos"
     THUMBNAILS_SUBDIR: str = "thumbnails"
@@ -57,6 +101,22 @@ class Settings(BaseSettings):
     VIDEO_STREAM_CHUNK_SIZE: int = 1024 * 1024
     # Public URL prefix for static thumbnails (served by FastAPI StaticFiles).
     THUMBNAILS_URL_PREFIX: str = "/static/thumbnails"
+
+    # ---- Cloudflare R2 / S3-compatible storage ----
+    # Required when STORAGE_BACKEND=r2. The endpoint URL for R2 looks like
+    # https://<account-id>.r2.cloudflarestorage.com (no path).
+    R2_ENDPOINT_URL: str = ""
+    R2_BUCKET: str = ""
+    R2_ACCESS_KEY_ID: str = ""
+    R2_SECRET_ACCESS_KEY: str = ""
+    R2_REGION: str = "auto"
+    # Optional. If you've attached a public custom domain (or enabled
+    # r2.dev access), set it here so video <source> tags hit the CDN
+    # directly instead of redirecting through a presigned URL each time.
+    # Example: "https://media.learnsphere.app".
+    R2_PUBLIC_BASE_URL: str = ""
+    # TTL for presigned GET URLs when no public base URL is configured.
+    R2_PRESIGN_TTL_SECONDS: int = 3600
 
     # ---- Content sync ----
     # When true, on every app startup the videos directory is scanned and the
@@ -80,6 +140,8 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[misc]
     @property
     def DATABASE_URL(self) -> str:
+        if self.DATABASE_URL_OVERRIDE:
+            return _normalize_mysql_url(self.DATABASE_URL_OVERRIDE)
         return (
             f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}"
             f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}?charset=utf8mb4"

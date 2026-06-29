@@ -8,7 +8,7 @@ from app.core.exceptions import NotFoundError
 from app.models.course import Video
 from app.repositories.video_repository import VideoRepository
 from app.schemas.course import VideoRead
-from app.utils.storage import resolve_video_path
+from app.utils.object_storage import StreamTarget, get_storage_backend
 
 
 class VideoService:
@@ -34,17 +34,26 @@ class VideoService:
             }
         )
 
-    def resolve_file(self, video_id: int) -> tuple[Video, Path]:
+    def resolve_stream(self, video_id: int) -> tuple[Video, StreamTarget]:
         video = self.repo.get(video_id)
         if video is None:
             raise NotFoundError(f"Video {video_id} not found")
         try:
-            path = resolve_video_path(video.file_path)
+            target = get_storage_backend().get_stream_target(video.file_path)
+        except FileNotFoundError as exc:
+            raise NotFoundError(str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(exc),
             ) from exc
-        if not path.exists() or not path.is_file():
-            raise NotFoundError(f"Video file for {video_id} not found on disk")
-        return video, path
+        return video, target
+
+    # Back-compat alias used by older callers/tests.
+    def resolve_file(self, video_id: int) -> tuple[Video, Path]:
+        video, target = self.resolve_stream(video_id)
+        if not target.is_local or target.local_path is None:
+            raise NotFoundError(
+                f"Video {video_id} is stored remotely and cannot be opened as a local file"
+            )
+        return video, target.local_path

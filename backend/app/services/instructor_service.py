@@ -9,7 +9,6 @@ courses.
 from __future__ import annotations
 
 import re
-import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -35,12 +34,8 @@ from app.services.course_service import (
     _section_to_read,
     _video_to_read,
 )
-from app.utils.storage import (
-    resolve_video_path,
-    sanitize_filename,
-    thumbnail_url,
-    unique_video_path,
-)
+from app.utils.object_storage import get_storage_backend
+from app.utils.storage import thumbnail_url
 
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 _ALLOWED_VIDEO_EXTS = {".mp4", ".webm", ".mov", ".mkv", ".m4v"}
@@ -236,12 +231,12 @@ class InstructorService:
                 + ", ".join(sorted(_ALLOWED_VIDEO_EXTS))
             )
 
-        # Persist the file under storage/videos/<course-slug>/<section-slug>/...
+        # Persist via the configured storage backend (local disk or R2).
         section_slug = _slugify(section.title)
-        abs_path, rel_path = unique_video_path(course.slug, section_slug, filename)
         try:
-            with abs_path.open("wb") as out:
-                shutil.copyfileobj(upload.file, out)
+            rel_path = get_storage_backend().save_upload(
+                course.slug, section_slug, filename, upload.file
+            )
         finally:
             upload.file.close()
 
@@ -274,12 +269,7 @@ class InstructorService:
     def delete_video(self, video_id: int, user: User) -> None:
         video = self._video_for(video_id, user)
         # Best-effort file removal; missing files are fine.
-        try:
-            path = resolve_video_path(video.file_path)
-            if path.exists():
-                path.unlink()
-        except ValueError:
-            pass
+        get_storage_backend().delete(video.file_path)
         self.db.delete(video)
         self.db.commit()
 
