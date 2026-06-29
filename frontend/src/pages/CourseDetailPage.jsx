@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import CertificateBanner from "../components/CertificateBanner.jsx";
@@ -21,6 +21,9 @@ export default function CourseDetailPage() {
     currentQuiz,
   } = useVideoPlayer();
   const { loadCourseProgress, summary } = useProgress();
+  // Bumped whenever a quiz is submitted so the certificate banner re-checks
+  // eligibility (quiz pass doesn't change video-progress percent).
+  const [quizRefreshKey, setQuizRefreshKey] = useState(0);
 
   const fetcher = useCallback(() => courseService.get(courseId), [courseId]);
   const { data: course, error, loading } = useFetch(fetcher, [courseId]);
@@ -118,6 +121,7 @@ export default function CourseDetailPage() {
             courseId={courseId}
             courseTitle={course.title}
             percentComplete={percent}
+            refreshKey={quizRefreshKey}
           />
         )}
       </header>
@@ -129,6 +133,7 @@ export default function CourseDetailPage() {
               key={currentQuiz.quizId}
               quizId={currentQuiz.quizId}
               sectionTitle={activeQuizSectionTitle}
+              onSubmitted={() => setQuizRefreshKey((k) => k + 1)}
             />
           ) : (
             <VideoPlayer />

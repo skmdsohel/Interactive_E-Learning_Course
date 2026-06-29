@@ -41,6 +41,21 @@ export default function CertificateBanner({
     fetchEligibility();
   }, [fetchEligibility, percentComplete, refreshKey]);
 
+  // Auto-refetch when the tab becomes visible or regains focus. This covers
+  // the case where the user finished a quiz/video in another tab or where a
+  // parent prop refresh somehow didn't fire (stale closure on first load).
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") fetchEligibility();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", fetchEligibility);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", fetchEligibility);
+    };
+  }, [fetchEligibility]);
+
   const handleDownload = async () => {
     setDownloading(true);
     setDownloadError(null);
@@ -107,13 +122,23 @@ export default function CertificateBanner({
     );
   }
 
-  // Not eligible yet — small hint of what's left.
+  // Not eligible yet — small hint of what's left, plus a manual recheck.
   return (
-    <div className="mt-4 rounded-2xl border border-line bg-bg-elev px-4 py-3 text-xs text-fg-muted">
-      <span className="font-medium text-fg">Certificate</span>:{" "}
-      {data.reason ||
-        `${data.completed_videos}/${data.total_videos} videos · ${data.passed_quizzes}/${data.total_quizzes} quizzes`}
-      .
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-bg-elev px-4 py-3 text-xs text-fg-muted">
+      <span>
+        <span className="font-medium text-fg">Certificate</span>:{" "}
+        {data.reason ||
+          `${data.completed_videos}/${data.total_videos} videos · ${data.passed_quizzes}/${data.total_quizzes} quizzes`}
+        .
+      </span>
+      <button
+        type="button"
+        onClick={fetchEligibility}
+        disabled={state.loading}
+        className="rounded-full border border-line px-3 py-1 text-xs font-medium text-fg transition hover:border-line-strong hover:bg-surface disabled:opacity-50"
+      >
+        {state.loading ? "Checking…" : "Check again"}
+      </button>
     </div>
   );
 }

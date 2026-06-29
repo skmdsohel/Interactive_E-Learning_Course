@@ -7,7 +7,7 @@ import Spinner from "./Spinner.jsx";
  * Renders a section quiz for a learner: 4 multiple-choice questions, a
  * submit action, and a graded result view with per-question feedback.
  */
-export default function QuizPanel({ quizId, sectionTitle }) {
+export default function QuizPanel({ quizId, sectionTitle, onSubmitted }) {
   const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState({}); // { [questionId]: 0..3 }
   const [result, setResult] = useState(null);
@@ -63,6 +63,7 @@ export default function QuizPanel({ quizId, sectionTitle }) {
     try {
       const res = await quizService.submit(quiz.id, payload);
       setResult(res);
+      if (typeof onSubmitted === "function") onSubmitted(res);
     } catch (e) {
       setError(
         e?.response?.data?.error?.message ||
