@@ -231,7 +231,7 @@ export default function InstructorCourseEditorPage() {
 
       {/* Sections list */}
       <div className="space-y-4">
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-fg">Sections</h2>
             <p className="text-xs text-fg-subtle">
@@ -240,6 +240,7 @@ export default function InstructorCourseEditorPage() {
           </div>
           <form onSubmit={handleAddSection} className="flex items-center gap-2">
             <input
+              id="new-section-title"
               type="text"
               value={newSectionTitle}
               onChange={(e) => setNewSectionTitle(e.target.value)}
@@ -249,16 +250,45 @@ export default function InstructorCourseEditorPage() {
             <button
               type="submit"
               disabled={addingSection || !newSectionTitle.trim()}
-              className="rounded-full bg-brand-600 px-3 py-1.5 text-sm font-medium text-brand-fg shadow-sm transition hover:bg-brand-700 disabled:opacity-50"
+              title={
+                !newSectionTitle.trim()
+                  ? "Type a section title first"
+                  : "Add this section"
+              }
+              className="rounded-full bg-brand-600 px-3 py-1.5 text-sm font-medium text-brand-fg shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              + Add
+              {addingSection ? "Adding…" : "+ Add"}
             </button>
           </form>
         </div>
 
         {(course.sections || []).length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-line bg-surface p-6 text-center text-sm text-fg-subtle">
-            No sections yet. Add your first section above.
+          <div className="rounded-2xl border border-dashed border-line bg-surface p-6 text-center">
+            <p className="text-sm font-medium text-fg">No sections yet.</p>
+            <p className="mt-1 text-xs text-fg-subtle">
+              Give your first section a title (for example, “Introduction”) and
+              click + Add to create it.
+            </p>
+            <form
+              onSubmit={handleAddSection}
+              className="mt-4 flex flex-wrap items-center justify-center gap-2"
+            >
+              <input
+                type="text"
+                autoFocus
+                value={newSectionTitle}
+                onChange={(e) => setNewSectionTitle(e.target.value)}
+                placeholder="e.g. Introduction"
+                className="w-64 rounded-full border border-line bg-elevated px-3 py-1.5 text-sm text-fg focus:border-brand-500 focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={addingSection || !newSectionTitle.trim()}
+                className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-medium text-brand-fg shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {addingSection ? "Adding…" : "+ Add section"}
+              </button>
+            </form>
           </div>
         ) : (
           course.sections.map((section) => (
