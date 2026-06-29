@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     admin,
     auth,
+    certificates,
     courses,
     health,
     instructor,
@@ -19,5 +20,6 @@ api_router.include_router(courses.router)
 api_router.include_router(videos.router)
 api_router.include_router(progress.router)
 api_router.include_router(quizzes.router)
+api_router.include_router(certificates.router)
 api_router.include_router(instructor.router)
 api_router.include_router(admin.router)

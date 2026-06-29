@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import CertificateBanner from "../components/CertificateBanner.jsx";
 import PlaylistSidebar from "../components/PlaylistSidebar.jsx";
 import QuizPanel from "../components/QuizPanel.jsx";
 import Spinner from "../components/Spinner.jsx";
@@ -110,6 +111,14 @@ export default function CourseDetailPage() {
               />
             </div>
           </div>
+        )}
+
+        {summary && total > 0 && (
+          <CertificateBanner
+            courseId={courseId}
+            courseTitle={course.title}
+            percentComplete={percent}
+          />
         )}
       </header>
 
