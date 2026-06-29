@@ -74,44 +74,193 @@ docker compose down -v
 
 ## Quick start (local, without Docker)
 
-### 1. MySQL
+Use this when you want to run the backend and frontend directly on your
+machine (faster reloads, easier debugging in VS Code / PyCharm). You still
+need a MySQL instance — the easiest is to run just the MySQL container from
+docker-compose and skip the rest.
 
-Start a MySQL 8 instance locally (Docker is fine: `docker compose up mysql -d`).
-Then create the database and user:
+### Prerequisites
+
+| Tool | Version | Notes |
+| ---- | ------- | ----- |
+| Python | 3.13.x | `python --version` |
+| Node.js | 20 LTS or newer | `node --version` |
+| MySQL | 8.x | Native install **or** `docker compose up mysql -d` |
+| Git | any | to clone the repo |
+
+### 1. Get the code
+
+```bash
+git clone <your-fork-url> learnsphere
+cd learnsphere
+```
+
+### 2. Start MySQL
+
+**Option A — use the docker-compose MySQL only** (recommended, zero install):
+
+```bash
+docker compose up mysql -d
+```
+
+This starts MySQL on `localhost:3306` with the database `lms_db`, user
+`lms_user`, password `lms_password` already created — nothing else to do.
+
+**Option B — use a native MySQL install:**
 
 ```sql
 CREATE DATABASE lms_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'lms_user'@'%' IDENTIFIED BY 'lms_password';
-GRANT ALL PRIVILEGES ON lms_db.* TO 'lms_user'@'%';
+CREATE USER 'lms_user'@'localhost' IDENTIFIED BY 'lms_password';
+GRANT ALL PRIVILEGES ON lms_db.* TO 'lms_user'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-### 2. Backend
+### 3. Backend
 
 ```bash
 cd backend
+
+# Create + activate a virtualenv
 python -m venv .venv
-.venv\Scripts\activate          # Windows
+.venv\Scripts\activate                # Windows (PowerShell: .venv\Scripts\Activate.ps1)
+# source .venv/bin/activate           # macOS / Linux
+
+# Install Python deps
+pip install --upgrade pip
 pip install -r requirements.txt
-copy .env.example .env
-alembic upgrade head
-uvicorn app.main:app --reload
+
+# Configure env
+copy .env.example .env                # Windows
+# cp .env.example .env                # macOS / Linux
 ```
 
-### 3. Frontend
+Open `backend/.env` and set at minimum:
+
+```ini
+APP_ENV=development
+DEBUG=true
+
+# Database — matches the docker-compose MySQL defaults
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=lms_user
+DB_PASSWORD=lms_password
+DB_NAME=lms_db
+
+# JWT — any long random string for local dev
+JWT_SECRET=change-me-to-anything-long-and-random
+
+# Google OAuth — your OAuth web client ID (required to sign in)
+GOOGLE_CLIENT_ID=xxxxxxxxxxxx.apps.googleusercontent.com
+
+# Admin auto-promotion (comma-separated emails)
+ADMIN_EMAILS=you@example.com
+
+# CORS — allow the Vite dev server
+CORS_ORIGINS=http://localhost:5173
+
+# Storage — local disk is the default for dev
+STORAGE_BACKEND=local
+```
+
+> **Leave `DATABASE_URL` empty** in local dev. When it's empty the app builds
+> the URL from `DB_HOST/DB_USER/...` above. Only set `DATABASE_URL` when you
+> want to point at PlanetScale or a remote MySQL.
+
+Run migrations and start Uvicorn:
+
+```bash
+alembic upgrade head
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+You should see:
+
+```
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+```
+
+Sanity check in another shell:
+
+```bash
+curl http://localhost:8000/api/v1/health/live
+# → {"status":"alive"}
+```
+
+> **Optional — seed sample courses:** set `AUTO_SEED_ON_STARTUP=true` in
+> `.env` and restart Uvicorn once. The seed runs from `backend/content/`
+> and you'll see a few demo courses on the homepage. Turn it back to
+> `false` after the first run.
+
+### 4. Frontend
+
+In a **new terminal** (leave Uvicorn running):
 
 ```bash
 cd frontend
-copy .env.example .env
+
+# Install deps
 npm install
+
+# Configure env
+copy .env.example .env                # Windows
+# cp .env.example .env                # macOS / Linux
+```
+
+Open `frontend/.env` and set:
+
+```ini
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+VITE_GOOGLE_CLIENT_ID=xxxxxxxxxxxx.apps.googleusercontent.com    # same as backend
+```
+
+Start the dev server:
+
+```bash
 npm run dev
 ```
 
-## Verifying the stack
+Open the URL Vite prints (default <http://localhost:5173>).
+
+### 5. Verify end-to-end
 
 1. Open <http://localhost:5173>.
-2. Click **Health** in the top nav.
-3. You should see `status: ok`, `database: ok`.
+2. Click **Sign in with Google**, pick the account whose email is in
+   `ADMIN_EMAILS`. You should land on the home page as admin.
+3. Click **Health** in the nav → expect `status: ok`, `database: ok`.
+4. Browse to a course → play a video. Videos served from local disk
+   (`backend/content/...`) stream directly through `/api/v1/videos/.../stream`.
+
+### Daily workflow
+
+| Action | Command |
+| ------ | ------- |
+| Start MySQL | `docker compose up mysql -d` |
+| Start backend | (in `backend/`) `.venv\Scripts\activate && uvicorn app.main:app --reload` |
+| Start frontend | (in `frontend/`) `npm run dev` |
+| Stop MySQL | `docker compose stop mysql` |
+| Wipe MySQL data | `docker compose down -v` (warning: deletes all DB rows) |
+| Create a new migration | `alembic revision --autogenerate -m "..."` then `alembic upgrade head` |
+| Run backend tests | `pytest` (from `backend/`) |
+| Run frontend lint | `npm run lint` (from `frontend/`) |
+
+### Troubleshooting
+
+- **`ModuleNotFoundError: app`** — activate the venv first, then run uvicorn
+  from inside the `backend/` directory.
+- **`Can't connect to MySQL server on 'localhost'`** — MySQL container/service
+  isn't running. `docker compose up mysql -d` or start your native service.
+- **`Access denied for user 'lms_user'`** — credentials in `.env` don't match
+  your MySQL. The docker-compose defaults are `lms_user / lms_password / lms_db`.
+- **Google sign-in fails with "origin mismatch"** — add
+  `http://localhost:5173` to your OAuth client's *Authorized JavaScript
+  origins* in Google Cloud Console.
+- **CORS error in the browser** — `CORS_ORIGINS` in `backend/.env` must
+  include the exact frontend origin (`http://localhost:5173`), then restart
+  Uvicorn.
+- **Videos won't play / 404** — `STORAGE_BACKEND` must be `local` for local
+  dev, and the file must exist under `backend/content/.../<slug>/videos/`.
 
 ## Deploying to Render
 
