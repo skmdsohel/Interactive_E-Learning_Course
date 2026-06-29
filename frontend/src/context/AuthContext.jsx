@@ -111,6 +111,7 @@ export function AuthProvider({ children }) {
       isAdmin: user?.role === "admin",
       isInstructor: user?.role === "instructor",
       canManageCourses: user?.role === "admin" || user?.role === "instructor",
+      needsRoleSelection: Boolean(token && user && user.role === "pending"),
       loading,
       signInWithGoogle,
       chooseRole,

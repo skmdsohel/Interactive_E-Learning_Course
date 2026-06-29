@@ -7,6 +7,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database.base import Base, IdMixin, TimestampMixin
 
 # Allowed role values stored in `users.role`.
+# `pending` is a sentinel applied to brand-new accounts before they choose
+# learner or instructor; it is NOT part of ALL_ROLES so the admin role
+# endpoint will refuse to set it.
+ROLE_PENDING = "pending"
 ROLE_LEARNER = "learner"
 ROLE_INSTRUCTOR = "instructor"
 ROLE_ADMIN = "admin"

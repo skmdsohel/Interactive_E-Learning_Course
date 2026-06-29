@@ -9,7 +9,13 @@ from app.core.config import settings
 from app.core.exceptions import AppException
 from app.core.logging import get_logger
 from app.core.security import create_access_token
-from app.models.user import ROLE_ADMIN, ROLE_INSTRUCTOR, ROLE_LEARNER, User
+from app.models.user import (
+    ROLE_ADMIN,
+    ROLE_INSTRUCTOR,
+    ROLE_LEARNER,
+    ROLE_PENDING,
+    User,
+)
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import TokenResponse, UserRead
 
@@ -68,7 +74,13 @@ class AuthService:
             # Allow linking by email if a prior row exists (e.g. seeded data).
             user = self.users.get_by_email(email)
             if user is None:
-                user = User(google_sub=google_sub, email=email, name=name, picture_url=picture)
+                user = User(
+                    google_sub=google_sub,
+                    email=email,
+                    name=name,
+                    picture_url=picture,
+                    role=ROLE_PENDING,
+                )
                 self.db.add(user)
                 self.db.flush()
                 is_new_user = True
@@ -83,15 +95,15 @@ class AuthService:
 
         # Role assignment:
         #   1. ADMIN_EMAILS always wins — promote to admin every login.
-        #   2. For a brand-new account, store the role chosen at sign-up
-        #      (defaults to learner if none provided).
+        #   2. For a brand-new account, keep it pending so the frontend can
+        #      prompt the user to pick learner/instructor. If the client
+        #      already supplied a valid role, honor it immediately.
         #   3. For an existing account, keep whatever role is in the DB.
         if email.lower() in settings.admin_emails_set:
             if user.role != ROLE_ADMIN:
                 user.role = ROLE_ADMIN
-        elif is_new_user:
-            chosen = requested_role if requested_role in {ROLE_LEARNER, ROLE_INSTRUCTOR} else ROLE_LEARNER
-            user.role = chosen
+        elif is_new_user and requested_role in {ROLE_LEARNER, ROLE_INSTRUCTOR}:
+            user.role = requested_role
 
         self.db.commit()
         self.db.refresh(user)
