@@ -6,8 +6,12 @@
 #
 # Secrets (sync: false) must be set in the Render dashboard after first apply.
 # Required: DATABASE_URL, GOOGLE_CLIENT_ID, ADMIN_EMAILS, CORS_ORIGINS,
-#           R2_ENDPOINT_URL, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY,
-#           VITE_API_BASE_URL, VITE_GOOGLE_CLIENT_ID.
+#           VITE_API_BASE_URL, VITE_GOOGLE_CLIENT_ID,
+#           plus the env vars for whichever STORAGE_BACKEND you picked:
+#             STORAGE_BACKEND=azure → AZURE_STORAGE_ACCOUNT_NAME,
+#               AZURE_STORAGE_ACCOUNT_KEY, AZURE_STORAGE_CONTAINER
+#             STORAGE_BACKEND=r2    → R2_ENDPOINT_URL, R2_BUCKET,
+#               R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
 
 services:
   - type: web
@@ -31,17 +35,18 @@ services:
         value: "false"
       - key: AUTO_SEED_PRUNE_MISSING
         value: "false"
+      # Pick one: local | r2 | azure
       - key: STORAGE_BACKEND
-        value: r2
+        value: azure
       - key: JWT_EXPIRE_MINUTES
         value: "10080"
       - key: JWT_SECRET
         generateValue: true
-      # Connection string from PlanetScale. Paste the URL from
-      # PlanetScale → Branches → main → Connect → "General" as-is, e.g.
-      #   mysql://USER:PASSWORD@aws.connect.psdb.cloud/DBNAME?sslaccept=strict
-      # The backend rewrites it for PyMySQL and enables TLS automatically
-      # based on the *.psdb.cloud hostname.
+      # MySQL connection string. Format:
+      #   mysql://USER:PASSWORD@HOST:3306/DBNAME
+      # (Works with Azure VM MySQL, PlanetScale, Aiven, etc. The backend
+      # normalises the URL and auto-enables TLS for known managed hosts;
+      # set DB_SSL=true manually for self-hosted MySQL with TLS.)
       - key: DATABASE_URL
         sync: false
       - key: GOOGLE_CLIENT_ID
@@ -52,7 +57,18 @@ services:
       # https://learnsphere-frontend.onrender.com
       - key: CORS_ORIGINS
         sync: false
-      # Cloudflare R2 / S3-compatible bucket holding uploaded videos.
+      # --- Azure Blob Storage (only used when STORAGE_BACKEND=azure) ---
+      - key: AZURE_STORAGE_ACCOUNT_NAME
+        sync: false
+      - key: AZURE_STORAGE_ACCOUNT_KEY
+        sync: false
+      - key: AZURE_STORAGE_CONTAINER
+        sync: false
+      # Optional public CDN / custom domain in front of the container; when
+      # set, the streaming endpoint redirects here instead of issuing SAS URLs.
+      - key: AZURE_PUBLIC_BASE_URL
+        sync: false
+      # --- Cloudflare R2 (only used when STORAGE_BACKEND=r2) ---
       - key: R2_ENDPOINT_URL
         sync: false
       - key: R2_BUCKET
@@ -61,8 +77,6 @@ services:
         sync: false
       - key: R2_SECRET_ACCESS_KEY
         sync: false
-      # Optional. Public custom domain attached to the bucket; if set, the
-      # streaming endpoint redirects here instead of generating presigned URLs.
       - key: R2_PUBLIC_BASE_URL
         sync: false
 

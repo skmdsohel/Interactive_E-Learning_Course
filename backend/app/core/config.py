@@ -93,6 +93,7 @@ class Settings(BaseSettings):
     # ---- Storage ----
     # `local` keeps everything on disk under STORAGE_ROOT (dev / Docker-compose).
     # `r2` writes uploaded videos to Cloudflare R2 (or any S3-compatible bucket).
+    # `azure` writes uploaded videos to an Azure Blob Storage container.
     STORAGE_BACKEND: str = "local"
     STORAGE_ROOT: str = "storage"
     VIDEOS_SUBDIR: str = "videos"
@@ -117,6 +118,21 @@ class Settings(BaseSettings):
     R2_PUBLIC_BASE_URL: str = ""
     # TTL for presigned GET URLs when no public base URL is configured.
     R2_PRESIGN_TTL_SECONDS: int = 3600
+
+    # ---- Azure Blob Storage ----
+    # Required when STORAGE_BACKEND=azure.
+    AZURE_STORAGE_ACCOUNT_NAME: str = ""
+    AZURE_STORAGE_ACCOUNT_KEY: str = ""
+    AZURE_STORAGE_CONTAINER: str = ""
+    # Optional override (e.g. for Azurite or a sovereign cloud). Defaults to
+    # https://<account>.blob.core.windows.net.
+    AZURE_STORAGE_ACCOUNT_URL: str = ""
+    # Optional. Public CDN / custom domain in front of the container; when
+    # set the streaming endpoint redirects directly here instead of issuing
+    # SAS URLs. Example: "https://media.learnsphere.app".
+    AZURE_PUBLIC_BASE_URL: str = ""
+    # TTL for SAS GET URLs when no public base URL is configured.
+    AZURE_SAS_TTL_SECONDS: int = 3600
 
     # ---- Content sync ----
     # When true, on every app startup the videos directory is scanned and the
