@@ -100,6 +100,19 @@ class _LocalBackend:
         return StreamTarget(local_path=path)
 
 
+_MIME_BY_EXT = {
+    ".mp4": "video/mp4",
+    ".webm": "video/webm",
+    ".mov": "video/quicktime",
+    ".mkv": "video/x-matroska",
+    ".m4v": "video/x-m4v",
+}
+
+
+def _guess_content_type(filename: str) -> str:
+    return _MIME_BY_EXT.get(Path(filename).suffix.lower(), "application/octet-stream")
+
+
 class _AzureBlobBackend:
     """Azure Blob Storage implementation.
 
