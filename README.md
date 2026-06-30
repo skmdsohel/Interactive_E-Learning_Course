@@ -29,22 +29,68 @@ enrollments, and learner progress features.
 
 ## Architecture
 
-```
-React (Vite, :5173)
-        │  axios → /api/v1/*
-        ▼
-FastAPI (Uvicorn, :8000)
-  ├─ api/        routers
-  ├─ services/   orchestration
-  ├─ repositories/  data access
-  └─ models/     SQLAlchemy ORM
-        │
-        ▼
-MySQL 8 (:3306)
+<p align="center">
+  <img src="docs/architecture.svg" alt="Animated diagram of LearnSphere request flow" width="100%" />
+</p>
+
+The animated SVG above shows live request flow through the system. Static
+fallback (rendered by GitHub from Mermaid):
+
+```mermaid
+flowchart LR
+    subgraph Client["🌐 Client"]
+        Browser["Browser<br/>(learner / instructor)"]
+    end
+
+    subgraph Render["☁️ Render"]
+        React["React (Vite)<br/>Static Site<br/>Tailwind v4 · Router v7"]
+        FastAPI["FastAPI<br/>Docker Web Service<br/>routers → services → repos"]
+    end
+
+    subgraph Google["🔑 Google"]
+        OAuth["OAuth 2.0<br/>ID-token verify"]
+    end
+
+    subgraph Azure["🟦 Azure"]
+        MySQL[("MySQL 8<br/>on Ubuntu VM")]
+        Blob[("Blob Storage<br/>videos container")]
+    end
+
+    Browser -- HTTPS --> React
+    React -- "axios /api/v1/*" --> FastAPI
+    FastAPI -- "verify id_token" --> OAuth
+    FastAPI -- SQLAlchemy --> MySQL
+    FastAPI -- "302 → SAS URL" --> Blob
+    Blob -. "video stream (direct)" .-> Browser
+
+    classDef edge fill:#0f172a,stroke:#475569,color:#e2e8f0;
+    classDef api  fill:#064e3b,stroke:#34d399,color:#ecfdf5;
+    classDef web  fill:#172554,stroke:#60a5fa,color:#dbeafe;
+    classDef db   fill:#3b0764,stroke:#a78bfa,color:#ede9fe;
+    classDef blob fill:#0e3a4d,stroke:#06b6d4,color:#cffafe;
+    classDef oauth fill:#451a03,stroke:#fbbf24,color:#fef3c7;
+
+    class Browser edge;
+    class React web;
+    class FastAPI api;
+    class OAuth oauth;
+    class MySQL db;
+    class Blob blob;
 ```
 
-**Layering rule:** routers → services → repositories → ORM models.
-Routers must not touch SQLAlchemy directly.
+**Request lifecycle:**
+
+1. **Auth** — browser POSTs Google ID token to `/api/v1/auth/google`; backend
+   verifies it with Google, upserts the user, returns a session JWT.
+2. **API calls** — every subsequent request from React carries
+   `Authorization: Bearer <jwt>`; routers delegate to services, services to
+   repositories, repositories to SQLAlchemy.
+3. **Video playback** — `GET /api/v1/videos/{key}` issues a short-lived
+   SAS URL and returns a `302` redirect, so the video bytes never transit
+   the backend — the browser fetches them straight from Azure Blob.
+
+**Layering rule:** routers → services → repositories → ORM models. Routers
+must not touch SQLAlchemy directly.
 
 ## Quick start (Docker)
 

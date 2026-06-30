@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 580" role="img" aria-labelledby="title desc" font-family="ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+  <title id="title">LearnSphere system architecture</title>
+  <desc id="desc">Animated diagram showing how a browser request flows through the React frontend, FastAPI backend, Google OAuth, MySQL on an Azure VM, and Azure Blob Storage.</desc>
+
+  <defs>
+    <!-- subtle background gradient -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+
+    <!-- arrow head -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+
+    <!-- packet glow -->
+    <radialGradient id="glow-blue" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#60a5fa" stop-opacity="1"/>
+      <stop offset="1" stop-color="#60a5fa" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-emerald" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#34d399" stop-opacity="1"/>
+      <stop offset="1" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-amber" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fbbf24" stop-opacity="1"/>
+      <stop offset="1" stop-color="#fbbf24" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-violet" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#a78bfa" stop-opacity="1"/>
+      <stop offset="1" stop-color="#a78bfa" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- background -->
+  <rect width="900" height="580" fill="url(#bg)"/>
+
+  <!-- header -->
+  <text x="40" y="44" fill="#e2e8f0" font-size="22" font-weight="700">LearnSphere — request flow</text>
+  <text x="40" y="68" fill="#94a3b8" font-size="13">Browser → React (Render Static) → FastAPI (Render Docker) → MySQL / Azure Blob / Google OAuth</text>
+
+  <!-- ============ Connection paths (drawn first so boxes sit on top) ============ -->
+  <!-- 1. Browser → React -->
+  <path id="p-browser-react" d="M180,290 L240,290" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <!-- 2. React → FastAPI -->
+  <path id="p-react-api" d="M400,290 L470,290" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <!-- 3. FastAPI ↔ Google OAuth (verify ID token) -->
+  <path id="p-api-google" d="M620,250 C680,200 720,180 760,160" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <!-- 4. FastAPI → MySQL -->
+  <path id="p-api-mysql" d="M540,330 C520,380 480,410 450,440" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <!-- 5. FastAPI → Azure Blob (SAS redirect URL) -->
+  <path id="p-api-blob" d="M600,330 C640,370 680,410 700,440" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <!-- 6. Azure Blob → Browser (the redirected video stream) -->
+  <path id="p-blob-browser" d="M600,480 C400,540 200,500 110,320" stroke="#334155" stroke-width="2" stroke-dasharray="4 4" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- ============ Edge labels ============ -->
+  <text x="185" y="282" fill="#94a3b8" font-size="11">HTTPS</text>
+  <text x="405" y="282" fill="#94a3b8" font-size="11">axios /api/v1/*</text>
+  <text x="680" y="200" fill="#94a3b8" font-size="11">verify id_token</text>
+  <text x="475" y="395" fill="#94a3b8" font-size="11">SQLAlchemy</text>
+  <text x="630" y="395" fill="#94a3b8" font-size="11">302 → SAS URL</text>
+  <text x="300" y="525" fill="#64748b" font-size="11" font-style="italic">video stream (Azure Blob → browser direct)</text>
+
+  <!-- ============ Boxes ============ -->
+  <!-- Browser -->
+  <g>
+    <rect x="40" y="250" width="140" height="80" rx="10" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
+    <text x="110" y="285" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="600">Browser</text>
+    <text x="110" y="305" text-anchor="middle" fill="#94a3b8" font-size="11">learner / instructor</text>
+  </g>
+
+  <!-- React frontend -->
+  <g>
+    <rect x="240" y="250" width="160" height="80" rx="10" fill="#1e293b" stroke="#60a5fa" stroke-width="2"/>
+    <text x="320" y="280" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="600">React (Vite)</text>
+    <text x="320" y="298" text-anchor="middle" fill="#94a3b8" font-size="11">Render Static Site</text>
+    <text x="320" y="313" text-anchor="middle" fill="#64748b" font-size="10">Tailwind v4 · React Router 7</text>
+  </g>
+
+  <!-- FastAPI backend -->
+  <g>
+    <rect x="470" y="250" width="180" height="80" rx="10" fill="#1e293b" stroke="#34d399" stroke-width="2"/>
+    <text x="560" y="280" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="600">FastAPI</text>
+    <text x="560" y="298" text-anchor="middle" fill="#94a3b8" font-size="11">Render Web Service (Docker)</text>
+    <text x="560" y="313" text-anchor="middle" fill="#64748b" font-size="10">routers → services → repos</text>
+  </g>
+
+  <!-- Google OAuth -->
+  <g>
+    <rect x="720" y="120" width="140" height="70" rx="10" fill="#1e293b" stroke="#fbbf24" stroke-width="2"/>
+    <text x="790" y="150" text-anchor="middle" fill="#e2e8f0" font-size="13" font-weight="600">Google OAuth</text>
+    <text x="790" y="170" text-anchor="middle" fill="#94a3b8" font-size="11">ID-token verify</text>
+  </g>
+
+  <!-- MySQL -->
+  <g>
+    <rect x="350" y="440" width="160" height="80" rx="10" fill="#1e293b" stroke="#a78bfa" stroke-width="2"/>
+    <text x="430" y="470" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="600">MySQL 8</text>
+    <text x="430" y="488" text-anchor="middle" fill="#94a3b8" font-size="11">Azure Ubuntu VM</text>
+    <text x="430" y="503" text-anchor="middle" fill="#64748b" font-size="10">users · courses · enrollments</text>
+  </g>
+
+  <!-- Azure Blob -->
+  <g>
+    <rect x="600" y="440" width="180" height="80" rx="10" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
+    <text x="690" y="470" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="600">Azure Blob Storage</text>
+    <text x="690" y="488" text-anchor="middle" fill="#94a3b8" font-size="11">videos container</text>
+    <text x="690" y="503" text-anchor="middle" fill="#64748b" font-size="10">SAS-signed reads</text>
+  </g>
+
+  <!-- ============ Animated packets ============ -->
+  <!-- 1. Browser → React (request) -->
+  <circle r="7" fill="url(#glow-blue)">
+    <animateMotion dur="6s" repeatCount="indefinite" begin="0s" rotate="auto" keyTimes="0;1" keyPoints="0;1" calcMode="linear">
+      <mpath href="#p-browser-react"/>
+    </animateMotion>
+  </circle>
+
+  <!-- 2. React → FastAPI -->
+  <circle r="7" fill="url(#glow-blue)">
+    <animateMotion dur="6s" repeatCount="indefinite" begin="0.7s">
+      <mpath href="#p-react-api"/>
+    </animateMotion>
+  </circle>
+
+  <!-- 3a. FastAPI → Google (verify) -->
+  <circle r="6" fill="url(#glow-amber)">
+    <animateMotion dur="6s" repeatCount="indefinite" begin="1.4s">
+      <mpath href="#p-api-google"/>
+    </animateMotion>
+  </circle>
+  <!-- 3b. Google → FastAPI (verified) - reverse direction along same path -->
+  <circle r="6" fill="url(#glow-amber)">
+    <animateMotion dur="6s" repeatCount="indefinite" begin="2.4s" keyPoints="1;0" keyTimes="0;1" calcMode="linear">
+      <mpath href="#p-api-google"/>
+    </animateMotion>
+  </circle>
+
+  <!-- 4. FastAPI → MySQL (query) -->
+  <circle r="6" fill="url(#glow-violet)">
+    <animateMotion dur="6s" repeatCount="indefinite" begin="2.1s">
+      <mpath href="#p-api-mysql"/>
+    </animateMotion>
+  </circle>
+
+  <!-- 5. FastAPI → Azure Blob (sign + redirect) -->
+  <circle r="6" fill="url(#glow-emerald)">
+    <animateMotion dur="6s" repeatCount="indefinite" begin="3s">
+      <mpath href="#p-api-blob"/>
+    </animateMotion>
+  </circle>
+
+  <!-- 6. Azure Blob → Browser (streamed video) -->
+  <circle r="7" fill="url(#glow-emerald)">
+    <animateMotion dur="7s" repeatCount="indefinite" begin="4s">
+      <mpath href="#p-blob-browser"/>
+    </animateMotion>
+  </circle>
+
+  <!-- ============ Legend ============ -->
+  <g transform="translate(40, 510)">
+    <circle r="5" cx="0" cy="0" fill="url(#glow-blue)"/>
+    <text x="14" y="4" fill="#94a3b8" font-size="11">HTTP request</text>
+
+    <circle r="5" cx="120" cy="0" fill="url(#glow-amber)"/>
+    <text x="134" y="4" fill="#94a3b8" font-size="11">OAuth verify</text>
+
+    <circle r="5" cx="230" cy="0" fill="url(#glow-violet)"/>
+    <text x="244" y="4" fill="#94a3b8" font-size="11">SQL query</text>
+
+    <circle r="5" cx="330" cy="0" fill="url(#glow-emerald)"/>
+    <text x="344" y="4" fill="#94a3b8" font-size="11">video stream</text>
+  </g>
+</svg>
