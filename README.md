@@ -39,36 +39,36 @@ fallback (rendered by GitHub from Mermaid):
 ```mermaid
 flowchart LR
     subgraph Client["🌐 Client"]
-        Browser["Browser<br/>(learner / instructor)"]
+        Browser["Browser<br/>learner / instructor<br/><i>Google sign-in · uploads</i>"]
     end
 
     subgraph Render["☁️ Render"]
-        React["React (Vite)<br/>Static Site<br/>Tailwind v4 · Router v7"]
-        FastAPI["FastAPI<br/>Docker Web Service<br/>routers → services → repos"]
+        React["🟦 FRONTEND SERVICE<br/><b>React (Vite)</b><br/>Render Static Site<br/>Tailwind v4 · Router v7 · axios"]
+        FastAPI["🟩 BACKEND SERVICE<br/><b>FastAPI</b><br/>Render Web Service (Docker)<br/>routers → services → repos<br/>JWT auth · Alembic"]
     end
 
     subgraph Google["🔑 Google"]
-        OAuth["OAuth 2.0<br/>ID-token verify"]
+        OAuth["OAuth 2.0<br/>ID-token verify<br/><i>no data stored</i>"]
     end
 
     subgraph Azure["🟦 Azure"]
-        MySQL[("MySQL 8<br/>on Ubuntu VM")]
-        Blob[("Blob Storage<br/>videos container")]
+        MySQL[("MySQL 8 on Ubuntu VM<br/>───── stores ─────<br/>users · courses · sections<br/>quizzes · enrollments · progress<br/>video metadata (object keys)")]
+        Blob[("Blob Storage container<br/>learnsphere-videos<br/>───── stores ─────<br/>raw video files (mp4 / webm)<br/>layout: videos/&lt;course&gt;/&lt;section&gt;<br/>uploaded by instructors only")]
     end
 
     Browser -- HTTPS --> React
     React -- "axios /api/v1/*" --> FastAPI
     FastAPI -- "verify id_token" --> OAuth
-    FastAPI -- SQLAlchemy --> MySQL
-    FastAPI -- "302 → SAS URL" --> Blob
-    Blob -. "video stream (direct)" .-> Browser
+    FastAPI -- "SQLAlchemy (r/w metadata)" --> MySQL
+    FastAPI -- "upload + sign (PUT / GET SAS)" --> Blob
+    Blob -. "302 → direct video stream" .-> Browser
 
-    classDef edge fill:#0f172a,stroke:#475569,color:#e2e8f0;
-    classDef api  fill:#064e3b,stroke:#34d399,color:#ecfdf5;
-    classDef web  fill:#172554,stroke:#60a5fa,color:#dbeafe;
-    classDef db   fill:#3b0764,stroke:#a78bfa,color:#ede9fe;
-    classDef blob fill:#0e3a4d,stroke:#06b6d4,color:#cffafe;
+    classDef web   fill:#172554,stroke:#60a5fa,color:#dbeafe;
+    classDef api   fill:#064e3b,stroke:#34d399,color:#ecfdf5;
+    classDef db    fill:#3b0764,stroke:#a78bfa,color:#ede9fe;
+    classDef blob  fill:#0e3a4d,stroke:#06b6d4,color:#cffafe;
     classDef oauth fill:#451a03,stroke:#fbbf24,color:#fef3c7;
+    classDef edge  fill:#0f172a,stroke:#475569,color:#e2e8f0;
 
     class Browser edge;
     class React web;
@@ -78,6 +78,16 @@ flowchart LR
     class Blob blob;
 ```
 
+**Who uploads what:**
+
+| Direction | What's transferred | Where it ends up |
+| --- | --- | --- |
+| Browser → Backend (instructor) | course metadata, section/quiz edits | **MySQL** (`courses`, `sections`, `quizzes`, `quiz_questions`) |
+| Browser → Backend → Azure Blob (instructor) | raw video file (multipart/form-data) | **Azure Blob** under `videos/<course>/<section>/<file>` |
+| Backend → MySQL | video object key + filename + content-type | **MySQL** `section_videos` row |
+| Browser → Backend (learner) | progress events, quiz answers | **MySQL** (`enrollments`, `progress`) |
+| Google → Backend | verified user identity (sub, email) | **MySQL** `users` (upserted on first login) |
+
 **Request lifecycle:**
 
 1. **Auth** — browser POSTs Google ID token to `/api/v1/auth/google`; backend
@@ -85,9 +95,12 @@ flowchart LR
 2. **API calls** — every subsequent request from React carries
    `Authorization: Bearer <jwt>`; routers delegate to services, services to
    repositories, repositories to SQLAlchemy.
-3. **Video playback** — `GET /api/v1/videos/{key}` issues a short-lived
-   SAS URL and returns a `302` redirect, so the video bytes never transit
-   the backend — the browser fetches them straight from Azure Blob.
+3. **Video upload** — instructor `POST`s the file to
+   `/api/v1/instructor/sections/{id}/video`; backend streams it straight into
+   Azure Blob and saves the object key in MySQL.
+4. **Video playback** — learner hits `GET /api/v1/videos/{key}`; backend
+   issues a short-lived SAS URL and returns a `302` redirect, so the bytes
+   never transit the backend — the browser streams them straight from Azure.
 
 **Layering rule:** routers → services → repositories → ORM models. Routers
 must not touch SQLAlchemy directly.
