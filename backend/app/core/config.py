@@ -92,7 +92,6 @@ class Settings(BaseSettings):
 
     # ---- Storage ----
     # `local` keeps everything on disk under STORAGE_ROOT (dev / Docker-compose).
-    # `r2` writes uploaded videos to Cloudflare R2 (or any S3-compatible bucket).
     # `azure` writes uploaded videos to an Azure Blob Storage container.
     STORAGE_BACKEND: str = "local"
     STORAGE_ROOT: str = "storage"
@@ -102,22 +101,6 @@ class Settings(BaseSettings):
     VIDEO_STREAM_CHUNK_SIZE: int = 1024 * 1024
     # Public URL prefix for static thumbnails (served by FastAPI StaticFiles).
     THUMBNAILS_URL_PREFIX: str = "/static/thumbnails"
-
-    # ---- Cloudflare R2 / S3-compatible storage ----
-    # Required when STORAGE_BACKEND=r2. The endpoint URL for R2 looks like
-    # https://<account-id>.r2.cloudflarestorage.com (no path).
-    R2_ENDPOINT_URL: str = ""
-    R2_BUCKET: str = ""
-    R2_ACCESS_KEY_ID: str = ""
-    R2_SECRET_ACCESS_KEY: str = ""
-    R2_REGION: str = "auto"
-    # Optional. If you've attached a public custom domain (or enabled
-    # r2.dev access), set it here so video <source> tags hit the CDN
-    # directly instead of redirecting through a presigned URL each time.
-    # Example: "https://media.learnsphere.app".
-    R2_PUBLIC_BASE_URL: str = ""
-    # TTL for presigned GET URLs when no public base URL is configured.
-    R2_PRESIGN_TTL_SECONDS: int = 3600
 
     # ---- Azure Blob Storage ----
     # Required when STORAGE_BACKEND=azure.

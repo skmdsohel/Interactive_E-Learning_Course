@@ -266,31 +266,41 @@ Open the URL Vite prints (default <http://localhost:5173>).
 
 The repo ships a `render.yaml` blueprint that creates two services from this
 single repo: a Dockerised backend Web Service and a static React frontend.
-Render has no managed MySQL, so the database lives in **PlanetScale** and
-uploaded video files live in **Cloudflare R2** (the free tier's ephemeral
-disk would otherwise lose every upload on restart).
+Render has no managed MySQL, so the database lives on an **Azure VM** and
+uploaded video files live in **Azure Blob Storage** (the free tier's
+ephemeral disk would otherwise lose every upload on restart).
 
 Local dev is unchanged — `docker compose up -d` still runs MySQL + backend +
 frontend the way it always has. The new env vars all default to "local mode".
 
 ### 1. Prepare external services
 
-#### PlanetScale (MySQL)
-1. Create a database (any region, defaults are fine).
-2. **Settings → Restrict branch FK creation**: leave OFF. The migrations use
-   foreign keys with `ON DELETE CASCADE`, and PlanetScale supports them.
-3. **Branches → main → Connect → Connect with: General**. Copy the URL — it
-   looks like `mysql://USER:PASSWORD@aws.connect.psdb.cloud/DBNAME?sslaccept=strict`.
-   You'll paste this into Render as `DATABASE_URL`; the backend auto-rewrites
-   it for PyMySQL and enables TLS based on the `*.psdb.cloud` hostname.
+#### MySQL on Azure VM
+1. Spin up an Ubuntu VM (B1s is plenty for dev), open inbound TCP 3306 in the
+   NSG to Render's outbound IPs (https://render.com/docs/static-outbound-ip-addresses).
+2. `sudo apt install mysql-server`, then in `/etc/mysql/mysql.conf.d/mysqld.cnf`
+   set `bind-address = 0.0.0.0` and `sudo systemctl restart mysql`.
+3. Create the database and user:
+   ```sql
+   CREATE DATABASE lms_db;
+   CREATE USER 'lms_user'@'%' IDENTIFIED BY '<long-random-password>';
+   GRANT ALL PRIVILEGES ON lms_db.* TO 'lms_user'@'%';
+   FLUSH PRIVILEGES;
+   ```
+4. The `DATABASE_URL` you'll paste into Render is
+   `mysql://lms_user:<password>@<vm-public-ip>:3306/lms_db`.
 
-#### Cloudflare R2 (object storage)
-1. Create a bucket.
-2. **Manage R2 API Tokens → Create API token** with R/W permissions on the
-   bucket. Note the access key ID, secret, and the account endpoint
-   `https://<account-id>.r2.cloudflarestorage.com`.
-3. *(Optional)* Attach a public custom domain to the bucket for direct CDN
-   reads — set it as `R2_PUBLIC_BASE_URL` to skip presigned URLs.
+#### Azure Blob Storage (object storage)
+1. Create a Storage Account (Standard LRS) in the same region as the VM.
+2. Inside it, create a private container (e.g. `learnsphere-videos`).
+3. Storage account → **Access keys** → copy the account name and `key1`.
+4. Storage account → **Resource sharing (CORS)** → Blob service → add a rule:
+   - Allowed origins: `https://learnsphere-frontend.onrender.com`
+   - Allowed methods: `GET`, `HEAD`
+   - Allowed / exposed headers: `*`
+   - Max age: `3600`
+5. *(Optional)* Put Azure Front Door / a custom domain in front of the
+   container — set it as `AZURE_PUBLIC_BASE_URL` to skip SAS URLs.
 
 #### Google OAuth
 In your existing OAuth client, add the deployed frontend origin (e.g.
@@ -309,17 +319,17 @@ Backend (`learnsphere-backend` → Environment):
 
 | Key | Value |
 | --- | --- |
-| `DATABASE_URL` | PlanetScale URL pasted as-is, e.g. `mysql://...@aws.connect.psdb.cloud/db?sslaccept=strict` |
+| `DATABASE_URL` | `mysql://lms_user:<password>@<vm-public-ip>:3306/lms_db` |
 | `GOOGLE_CLIENT_ID` | OAuth web client ID |
 | `ADMIN_EMAILS` | comma-separated emails to auto-promote |
 | `CORS_ORIGINS` | `https://learnsphere-frontend.onrender.com` |
-| `R2_ENDPOINT_URL` | `https://<account-id>.r2.cloudflarestorage.com` |
-| `R2_BUCKET` | bucket name |
-| `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | R2 token credentials |
-| `R2_PUBLIC_BASE_URL` | *(optional)* custom domain on the bucket |
+| `AZURE_STORAGE_ACCOUNT_NAME` | storage account name |
+| `AZURE_STORAGE_ACCOUNT_KEY` | `key1` value |
+| `AZURE_STORAGE_CONTAINER` | container name, e.g. `learnsphere-videos` |
+| `AZURE_PUBLIC_BASE_URL` | *(optional)* CDN / custom domain |
 
-`JWT_SECRET` is auto-generated. `STORAGE_BACKEND=r2` is already wired.
-`DB_SSL` is auto-enabled because the PlanetScale hostname is detected.
+`JWT_SECRET` is auto-generated. `STORAGE_BACKEND=azure` is already wired.
+Set `DB_SSL=true` if your VM's MySQL is configured for TLS.
 
 Frontend (`learnsphere-frontend` → Environment):
 

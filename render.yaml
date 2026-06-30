@@ -6,12 +6,9 @@
 #
 # Secrets (sync: false) must be set in the Render dashboard after first apply.
 # Required: DATABASE_URL, GOOGLE_CLIENT_ID, ADMIN_EMAILS, CORS_ORIGINS,
-#           VITE_API_BASE_URL, VITE_GOOGLE_CLIENT_ID,
-#           plus the env vars for whichever STORAGE_BACKEND you picked:
-#             STORAGE_BACKEND=azure → AZURE_STORAGE_ACCOUNT_NAME,
-#               AZURE_STORAGE_ACCOUNT_KEY, AZURE_STORAGE_CONTAINER
-#             STORAGE_BACKEND=r2    → R2_ENDPOINT_URL, R2_BUCKET,
-#               R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
+#           AZURE_STORAGE_ACCOUNT_NAME, AZURE_STORAGE_ACCOUNT_KEY,
+#           AZURE_STORAGE_CONTAINER,
+#           VITE_API_BASE_URL, VITE_GOOGLE_CLIENT_ID.
 
 services:
   - type: web
@@ -35,7 +32,7 @@ services:
         value: "false"
       - key: AUTO_SEED_PRUNE_MISSING
         value: "false"
-      # Pick one: local | r2 | azure
+      # Pick one: local | azure
       - key: STORAGE_BACKEND
         value: azure
       - key: JWT_EXPIRE_MINUTES
@@ -67,17 +64,6 @@ services:
       # Optional public CDN / custom domain in front of the container; when
       # set, the streaming endpoint redirects here instead of issuing SAS URLs.
       - key: AZURE_PUBLIC_BASE_URL
-        sync: false
-      # --- Cloudflare R2 (only used when STORAGE_BACKEND=r2) ---
-      - key: R2_ENDPOINT_URL
-        sync: false
-      - key: R2_BUCKET
-        sync: false
-      - key: R2_ACCESS_KEY_ID
-        sync: false
-      - key: R2_SECRET_ACCESS_KEY
-        sync: false
-      - key: R2_PUBLIC_BASE_URL
         sync: false
 
   - type: web
