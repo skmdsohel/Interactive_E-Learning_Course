@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.base import Base, IdMixin, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.activity import InteractiveActivity
     from app.models.quiz import Quiz
     from app.models.user import User
 
@@ -66,6 +67,12 @@ class Section(IdMixin, TimestampMixin, Base):
         back_populates="section",
         cascade="all, delete-orphan",
         uselist=False,
+        lazy="selectin",
+    )
+    activities: Mapped[List["InteractiveActivity"]] = relationship(
+        back_populates="section",
+        cascade="all, delete-orphan",
+        order_by="InteractiveActivity.position",
         lazy="selectin",
     )
 

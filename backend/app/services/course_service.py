@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import NotFoundError
 from app.models.course import Course
 from app.repositories.course_repository import CourseRepository
+from app.schemas.activity import ActivitySummary
 from app.schemas.course import (
     CourseListItem,
     CourseRead,
@@ -52,6 +53,15 @@ def _section_to_read(section) -> SectionRead:  # type: ignore[no-untyped-def]
             question_count=len(section.quiz.questions),
             pass_threshold=section.quiz.pass_threshold,
         )
+    activities = [
+        ActivitySummary(
+            id=a.id,
+            kind=a.kind,
+            title=a.title,
+            position=a.position,
+        )
+        for a in sorted(section.activities or [], key=lambda x: (x.position, x.id))
+    ]
     return SectionRead(
         id=section.id,
         course_id=section.course_id,
@@ -59,6 +69,7 @@ def _section_to_read(section) -> SectionRead:  # type: ignore[no-untyped-def]
         order_index=section.order_index,
         videos=[_video_to_read(v) for v in section.videos],
         quiz=quiz_summary,
+        activities=activities,
     )
 
 

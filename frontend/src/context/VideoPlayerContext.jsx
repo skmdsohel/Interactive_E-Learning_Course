@@ -32,6 +32,9 @@ export function VideoPlayerProvider({ children }) {
   // The active quiz selection. When non-null, the course detail page renders
   // the quiz panel in place of the video player.
   const [currentQuiz, setCurrentQuiz] = useState(null); // { sectionId, quizId } | null
+  // The active interactive activity selection. Mutually exclusive with quiz
+  // and video.
+  const [currentActivity, setCurrentActivity] = useState(null); // { sectionId, activityId } | null
 
   const playlist = useMemo(() => buildPlaylist(course), [course]);
 
@@ -47,6 +50,7 @@ export function VideoPlayerProvider({ children }) {
   const loadCourse = useCallback((nextCourse, initialVideoId = null) => {
     setCourse(nextCourse);
     setCurrentQuiz(null);
+    setCurrentActivity(null);
     const firstId =
       initialVideoId ??
       nextCourse?.sections?.flatMap((s) => s.videos || [])?.[0]?.id ??
@@ -59,6 +63,7 @@ export function VideoPlayerProvider({ children }) {
       if (playlist.some((v) => v.id === videoId)) {
         setCurrentVideoId(videoId);
         setCurrentQuiz(null);
+        setCurrentActivity(null);
       }
     },
     [playlist]
@@ -66,12 +71,19 @@ export function VideoPlayerProvider({ children }) {
 
   const selectQuiz = useCallback((sectionId, quizId) => {
     setCurrentQuiz({ sectionId, quizId });
+    setCurrentActivity(null);
+  }, []);
+
+  const selectActivity = useCallback((sectionId, activityId) => {
+    setCurrentActivity({ sectionId, activityId });
+    setCurrentQuiz(null);
   }, []);
 
   const playNext = useCallback(() => {
     if (hasNext) {
       setCurrentVideoId(playlist[currentIndex + 1].id);
       setCurrentQuiz(null);
+      setCurrentActivity(null);
     }
   }, [hasNext, playlist, currentIndex]);
 
@@ -79,6 +91,7 @@ export function VideoPlayerProvider({ children }) {
     if (hasPrevious) {
       setCurrentVideoId(playlist[currentIndex - 1].id);
       setCurrentQuiz(null);
+      setCurrentActivity(null);
     }
   }, [hasPrevious, playlist, currentIndex]);
 
@@ -86,6 +99,7 @@ export function VideoPlayerProvider({ children }) {
     setCourse(null);
     setCurrentVideoId(null);
     setCurrentQuiz(null);
+    setCurrentActivity(null);
   }, []);
 
   const value = useMemo(
@@ -95,11 +109,13 @@ export function VideoPlayerProvider({ children }) {
       currentVideo,
       currentIndex,
       currentQuiz,
+      currentActivity,
       hasPrevious,
       hasNext,
       loadCourse,
       selectVideo,
       selectQuiz,
+      selectActivity,
       playNext,
       playPrevious,
       reset,
@@ -110,11 +126,13 @@ export function VideoPlayerProvider({ children }) {
       currentVideo,
       currentIndex,
       currentQuiz,
+      currentActivity,
       hasPrevious,
       hasNext,
       loadCourse,
       selectVideo,
       selectQuiz,
+      selectActivity,
       playNext,
       playPrevious,
       reset,

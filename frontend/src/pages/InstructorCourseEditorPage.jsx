@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
+import SectionActivitiesEditor from "../components/activities/SectionActivitiesEditor.jsx";
 import Spinner from "../components/Spinner.jsx";
 import { instructorService } from "../services/instructorService.js";
 
@@ -311,6 +312,7 @@ function SectionEditor({ section, onChanged, onError }) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [editingQuiz, setEditingQuiz] = useState(false);
+  const [editingActivities, setEditingActivities] = useState(false);
   const fileRef = useRef(null);
 
   const saveTitle = async () => {
@@ -431,6 +433,13 @@ function SectionEditor({ section, onChanged, onError }) {
           )}
           <button
             type="button"
+            onClick={() => setEditingActivities((v) => !v)}
+            className="rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-fg-muted transition hover:text-fg hover:border-line-strong"
+          >
+            {editingActivities ? "Hide activities" : "Activities"}
+          </button>
+          <button
+            type="button"
             onClick={handleDeleteSection}
             className="rounded-full border border-danger/40 bg-danger-soft px-3 py-1 text-xs font-medium text-danger-soft-fg transition hover:border-danger/60"
           >
@@ -486,6 +495,10 @@ function SectionEditor({ section, onChanged, onError }) {
 
       {editingQuiz && section.quiz && (
         <QuizEditor quizId={section.quiz.id} onError={onError} />
+      )}
+
+      {editingActivities && (
+        <SectionActivitiesEditor sectionId={section.id} onError={onError} />
       )}
     </div>
   );

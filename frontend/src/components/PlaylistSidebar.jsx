@@ -10,8 +10,15 @@ function statusFor(progress) {
 }
 
 export default function PlaylistSidebar() {
-  const { course, currentVideo, currentQuiz, selectVideo, selectQuiz } =
-    useVideoPlayer();
+  const {
+    course,
+    currentVideo,
+    currentQuiz,
+    currentActivity,
+    selectVideo,
+    selectQuiz,
+    selectActivity,
+  } = useVideoPlayer();
   const { byVideoId } = useProgress();
 
   if (!course) return null;
@@ -34,6 +41,11 @@ export default function PlaylistSidebar() {
               </p>
               <p className="text-[11px] text-fg-subtle">
                 {section.videos?.length ?? 0} videos
+                {section.activities?.length
+                  ? ` · ${section.activities.length} activit${
+                      section.activities.length === 1 ? "y" : "ies"
+                    }`
+                  : ""}
                 {section.quiz ? " · quiz" : ""}
               </p>
             </div>
@@ -66,6 +78,31 @@ export default function PlaylistSidebar() {
                           {formatDuration(video.duration_seconds)}
                         </span>
                       )}
+                    </button>
+                  </li>
+                );
+              })}
+              {(section.activities || []).map((activity) => {
+                const isActive =
+                  currentActivity?.activityId === activity.id;
+                return (
+                  <li key={`act-${activity.id}`}>
+                    <button
+                      type="button"
+                      onClick={() => selectActivity(section.id, activity.id)}
+                      className={`flex w-full items-start gap-3 px-4 py-2.5 text-left text-sm transition-colors ${
+                        isActive
+                          ? "bg-brand-50 text-brand-700"
+                          : "text-fg-muted hover:bg-muted hover:text-fg"
+                      }`}
+                    >
+                      <ActivityBadge kind={activity.kind} isActive={isActive} />
+                      <span className="flex-1 truncate font-medium">
+                        {activity.title}
+                      </span>
+                      <span className="shrink-0 text-[10px] uppercase tracking-wide text-fg-subtle">
+                        {activityShort(activity.kind)}
+                      </span>
                     </button>
                   </li>
                 );
@@ -141,4 +178,34 @@ function StatusBadge({ status, isActive, index }) {
       {index}
     </span>
   );
+}
+
+function ActivityBadge({ kind, isActive }) {
+  const icon =
+    kind === "matching" ? "⇋" : kind === "flashcards" ? "⇋" : "≡";
+  const label =
+    kind === "matching"
+      ? "Matching activity"
+      : kind === "flashcards"
+      ? "Flashcards"
+      : "Ordering";
+  return (
+    <span
+      title={label}
+      className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+        isActive
+          ? "bg-brand-600 text-brand-fg"
+          : "bg-accent-soft text-accent-soft-fg"
+      }`}
+    >
+      {kind === "flashcards" ? "🂠" : icon}
+    </span>
+  );
+}
+
+function activityShort(kind) {
+  if (kind === "matching") return "Match";
+  if (kind === "flashcards") return "Cards";
+  if (kind === "ordering") return "Order";
+  return "";
 }

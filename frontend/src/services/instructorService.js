@@ -60,6 +60,24 @@ export const instructorService = {
     apiClient
       .patch(`/instructor/quizzes/${quizId}/questions/${questionId}`, payload)
       .then((r) => r.data),
+
+  // ---- Interactive activities ----
+  listActivities: (sectionId) =>
+    apiClient
+      .get(`/instructor/sections/${sectionId}/activities`)
+      .then((r) => r.data),
+  createActivity: (sectionId, payload) =>
+    apiClient
+      .post(`/instructor/sections/${sectionId}/activities`, payload)
+      .then((r) => r.data),
+  updateActivity: (activityId, payload) =>
+    apiClient
+      .patch(`/instructor/activities/${activityId}`, payload)
+      .then((r) => r.data),
+  deleteActivity: (activityId) =>
+    apiClient
+      .delete(`/instructor/activities/${activityId}`)
+      .then((r) => r.data),
 };
 
 /** Admin-only endpoints related to instructor / course assignment. */

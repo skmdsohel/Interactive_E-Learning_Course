@@ -20,12 +20,14 @@ from app.schemas.instructor import (
     SectionUpdate,
     VideoUpdate,
 )
+from app.schemas.activity import ActivityCreate, ActivityRead, ActivityUpdate
 from app.schemas.quiz import (
     QuizEditView,
     QuizQuestionEdit,
     QuizQuestionUpdate,
     QuizUpdate,
 )
+from app.services.activity_service import ActivityService
 from app.services.instructor_service import InstructorService
 from app.services.quiz_service import QuizService
 
@@ -267,3 +269,64 @@ def update_quiz_question(
     return QuizService(db).update_question(
         quiz_id=quiz_id, question_id=question_id, payload=payload
     )
+
+
+# ---- Interactive activities ----
+
+
+@router.get(
+    "/sections/{section_id}/activities",
+    response_model=list[ActivityRead],
+    summary="List activities in a section (instructor view)",
+)
+def list_section_activities(
+    section_id: int,
+    db: Session = Depends(db_session),
+    current_user: User = Depends(get_current_instructor),
+) -> list[ActivityRead]:
+    svc = ActivityService(db)
+    svc._section_owned(section_id, current_user)
+    return svc.list_for_section(section_id)
+
+
+@router.post(
+    "/sections/{section_id}/activities",
+    response_model=ActivityRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new interactive activity in a section",
+)
+def create_activity(
+    section_id: int,
+    payload: ActivityCreate,
+    db: Session = Depends(db_session),
+    current_user: User = Depends(get_current_instructor),
+) -> ActivityRead:
+    return ActivityService(db).create(section_id, payload, current_user)
+
+
+@router.patch(
+    "/activities/{activity_id}",
+    response_model=ActivityRead,
+    summary="Update an interactive activity",
+)
+def update_activity(
+    activity_id: int,
+    payload: ActivityUpdate,
+    db: Session = Depends(db_session),
+    current_user: User = Depends(get_current_instructor),
+) -> ActivityRead:
+    return ActivityService(db).update(activity_id, payload, current_user)
+
+
+@router.delete(
+    "/activities/{activity_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an interactive activity",
+)
+def delete_activity(
+    activity_id: int,
+    db: Session = Depends(db_session),
+    current_user: User = Depends(get_current_instructor),
+):
+    ActivityService(db).delete(activity_id, current_user)
+    return None

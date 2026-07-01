@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from pydantic import Field
 
+from app.schemas.activity import ActivitySummary
 from app.schemas.common import ORMModel
 
 
@@ -37,6 +38,7 @@ class SectionRead(ORMModel):
     order_index: int
     videos: List[VideoRead] = []
     quiz: Optional[SectionQuizSummary] = None
+    activities: List[ActivitySummary] = []
 
 
 class InstructorRef(ORMModel):

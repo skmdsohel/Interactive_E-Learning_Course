@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import ActivityPanel from "../components/activities/ActivityPanel.jsx";
 import CertificateBanner from "../components/CertificateBanner.jsx";
 import PlaylistSidebar from "../components/PlaylistSidebar.jsx";
 import QuizPanel from "../components/QuizPanel.jsx";
@@ -19,6 +20,7 @@ export default function CourseDetailPage() {
     reset,
     course: ctxCourse,
     currentQuiz,
+    currentActivity,
   } = useVideoPlayer();
   const { loadCourseProgress, summary } = useProgress();
   // Bumped whenever a quiz is submitted so the certificate banner re-checks
@@ -50,6 +52,14 @@ export default function CourseDetailPage() {
     const sec = ctxCourse.sections?.find((s) => s.id === currentQuiz.sectionId);
     return sec?.title || null;
   }, [currentQuiz, ctxCourse]);
+
+  const activeActivitySectionTitle = useMemo(() => {
+    if (!currentActivity || !ctxCourse) return null;
+    const sec = ctxCourse.sections?.find(
+      (s) => s.id === currentActivity.sectionId
+    );
+    return sec?.title || null;
+  }, [currentActivity, ctxCourse]);
 
   if (loading) {
     return (
@@ -128,7 +138,13 @@ export default function CourseDetailPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="min-w-0">
-          {currentQuiz ? (
+          {currentActivity ? (
+            <ActivityPanel
+              key={currentActivity.activityId}
+              activityId={currentActivity.activityId}
+              sectionTitle={activeActivitySectionTitle}
+            />
+          ) : currentQuiz ? (
             <QuizPanel
               key={currentQuiz.quizId}
               quizId={currentQuiz.quizId}
