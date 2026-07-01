@@ -13,13 +13,16 @@ function emptyPayloadFor(kind) {
   if (kind === "matching")
     return {
       pairs: [
-        { left: "", right: "" },
-        { left: "", right: "" },
+        { left: "Term 1", right: "Definition 1" },
+        { left: "Term 2", right: "Definition 2" },
       ],
     };
   if (kind === "flashcards")
-    return { cards: [{ front: "", back: "" }] };
-  if (kind === "ordering") return { items: ["", ""] };
+    return {
+      cards: [{ front: "Front of card 1", back: "Back of card 1" }],
+    };
+  if (kind === "ordering")
+    return { items: ["First step", "Second step"] };
   return {};
 }
 
