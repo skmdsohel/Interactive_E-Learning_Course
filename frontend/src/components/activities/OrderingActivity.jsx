@@ -77,12 +77,12 @@ export default function OrderingActivity({ activity, onCompleted }) {
   const allCorrect = correctCount === items.length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       {activity.instructions && (
         <p className="text-sm text-fg-muted">{activity.instructions}</p>
       )}
 
-      <ol className="space-y-2">
+      <ol className="space-y-2 stagger-children">
         {items.map((it, idx) => {
           const status = checked ? results[idx] : null;
           return (
@@ -92,12 +92,12 @@ export default function OrderingActivity({ activity, onCompleted }) {
               onDragStart={() => onDragStart(it.id)}
               onDragOver={onDragOver}
               onDrop={() => onDrop(it.id)}
-              className={`flex items-center gap-3 rounded-xl border p-3 shadow-sm transition ${
+              className={`flex items-center gap-3 rounded-xl border p-3 shadow-sm transition-all duration-300 ${
                 status === true
-                  ? "border-success bg-success-soft"
+                  ? "border-success bg-success-soft animate-pop"
                   : status === false
-                  ? "border-danger bg-danger-soft"
-                  : "border-line bg-surface hover:border-brand-500"
+                  ? "border-danger bg-danger-soft animate-shake"
+                  : "border-line bg-surface hover:-translate-y-0.5 hover:border-brand-500 hover:shadow-[var(--shadow-pop)]"
               }`}
               style={{ cursor: "move" }}
             >
@@ -161,7 +161,7 @@ export default function OrderingActivity({ activity, onCompleted }) {
           <button
             type="button"
             onClick={reset}
-            className="rounded-full border border-line px-3 py-1.5 text-xs font-medium text-fg-muted hover:text-fg hover:border-line-strong"
+            className="hover-lift rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-medium text-fg-muted hover:text-fg hover:border-line-strong"
           >
             Shuffle again
           </button>
@@ -177,7 +177,7 @@ export default function OrderingActivity({ activity, onCompleted }) {
                 if (onCompleted) onCompleted();
               }
             }}
-            className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-medium text-brand-fg shadow-sm transition hover:bg-brand-700"
+            className="hover-lift rounded-full bg-brand-600 px-4 py-1.5 text-sm font-medium text-brand-fg shadow-sm transition hover:bg-brand-700"
           >
             Check order
           </button>

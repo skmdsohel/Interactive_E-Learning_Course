@@ -76,7 +76,7 @@ export default function FlashcardsActivity({ activity, onCompleted }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       {activity.instructions && (
         <p className="text-sm text-fg-muted">{activity.instructions}</p>
       )}
@@ -86,54 +86,108 @@ export default function FlashcardsActivity({ activity, onCompleted }) {
           Card <span className="font-semibold text-fg">{index + 1}</span> of{" "}
           {cards.length}
         </span>
-        <span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-success" />
           {known.size} marked known
         </span>
       </div>
 
+      {/* Progress bar */}
+      <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-brand-gradient transition-[width] duration-500 ease-out"
+          style={{ width: `${((index + 1) / cards.length) * 100}%` }}
+        />
+      </div>
+
       <div
-        className="mx-auto w-full max-w-xl"
-        style={{ perspective: "1200px" }}
+        key={index}
+        className="mx-auto w-full max-w-xl animate-pop"
+        style={{ perspective: "1400px" }}
       >
         <button
           type="button"
           onClick={toggleFlip}
           aria-label={flipped ? "Show front of card" : "Show back of card"}
-          className="relative block w-full text-left"
-          style={{ minHeight: "16rem" }}
+          className="group relative block w-full text-left focus:outline-none"
+          style={{ minHeight: "18rem" }}
         >
           <div
-            className="relative h-64 w-full transition-transform duration-500"
+            className="relative h-72 w-full transition-transform duration-700"
             style={{
               transformStyle: "preserve-3d",
               transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+              transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
             }}
           >
+            {/* Front face */}
             <div
-              className="absolute inset-0 flex items-center justify-center rounded-2xl border border-line bg-surface p-6 text-center shadow-[var(--shadow-card)]"
+              className="absolute inset-0 overflow-hidden rounded-3xl shadow-[var(--shadow-pop)] transition-transform duration-300 group-hover:scale-[1.015]"
               style={{ backfaceVisibility: "hidden" }}
             >
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">
-                  Front
+              <div className="bg-brand-gradient absolute inset-0" />
+              <div
+                className="absolute inset-0 opacity-30"
+                style={{
+                  backgroundImage:
+                    "radial-gradient(circle at 20% 15%, rgba(255,255,255,0.35), transparent 40%), radial-gradient(circle at 85% 90%, rgba(255,255,255,0.25), transparent 45%)",
+                }}
+              />
+              {/* Corner badge */}
+              <span className="absolute right-4 top-4 rounded-full bg-white/25 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur">
+                {index + 1} / {cards.length}
+              </span>
+              <div className="relative flex h-full flex-col items-center justify-center p-8 text-center text-white">
+                <div className="animate-float text-3xl">💡</div>
+                <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/80">
+                  Question
                 </p>
-                <p className="mt-3 text-xl font-medium text-fg">{card.front}</p>
-                <p className="mt-6 text-xs text-fg-subtle">Click to flip</p>
+                <p className="mt-4 text-2xl font-semibold leading-snug drop-shadow-sm">
+                  {card.front}
+                </p>
+                <p className="mt-6 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-white/80">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                  Click to flip
+                </p>
               </div>
             </div>
+
+            {/* Back face */}
             <div
-              className="absolute inset-0 flex items-center justify-center rounded-2xl border border-brand-500 bg-brand-50 p-6 text-center shadow-[var(--shadow-card)]"
+              className="absolute inset-0 overflow-hidden rounded-3xl border border-brand-500/40 bg-surface shadow-[var(--shadow-pop)]"
               style={{
                 backfaceVisibility: "hidden",
                 transform: "rotateY(180deg)",
               }}
             >
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">
-                  Back
+              <div
+                className="absolute inset-x-0 top-0 h-1"
+                style={{
+                  background:
+                    "linear-gradient(90deg, var(--brand-500), #8b5cf6, #ec4899)",
+                }}
+              />
+              <div
+                className="absolute inset-0 opacity-50"
+                style={{
+                  backgroundImage:
+                    "radial-gradient(circle at 15% 100%, var(--brand-100), transparent 55%)",
+                }}
+              />
+              <span className="absolute right-4 top-4 rounded-full bg-brand-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-700">
+                Answer
+              </span>
+              <div className="relative flex h-full flex-col items-center justify-center p-8 text-center">
+                <div className="text-3xl">📖</div>
+                <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-700">
+                  {card.front}
                 </p>
-                <p className="mt-3 text-lg text-fg">{card.back}</p>
-                <p className="mt-6 text-xs text-fg-subtle">Click to flip back</p>
+                <p className="mt-4 text-xl font-medium leading-snug text-fg">
+                  {card.back}
+                </p>
+                <p className="mt-6 text-[11px] font-medium uppercase tracking-wider text-fg-subtle">
+                  Click to flip back
+                </p>
               </div>
             </div>
           </div>
@@ -145,14 +199,14 @@ export default function FlashcardsActivity({ activity, onCompleted }) {
           <button
             type="button"
             onClick={() => goto(-1)}
-            className="rounded-full border border-line px-3 py-1.5 text-sm font-medium text-fg-muted hover:text-fg hover:border-line-strong"
+            className="hover-lift rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-medium text-fg-muted hover:text-fg hover:border-line-strong"
           >
             ← Previous
           </button>
           <button
             type="button"
             onClick={() => goto(1)}
-            className="rounded-full border border-line px-3 py-1.5 text-sm font-medium text-fg-muted hover:text-fg hover:border-line-strong"
+            className="hover-lift rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-medium text-fg-muted hover:text-fg hover:border-line-strong"
           >
             Next →
           </button>
@@ -160,9 +214,9 @@ export default function FlashcardsActivity({ activity, onCompleted }) {
         <button
           type="button"
           onClick={toggleKnown}
-          className={`rounded-full px-4 py-1.5 text-sm font-medium shadow-sm transition ${
+          className={`hover-lift rounded-full px-4 py-1.5 text-sm font-medium shadow-sm transition ${
             known.has(index)
-              ? "bg-success text-white hover:brightness-95"
+              ? "bg-success text-white hover:brightness-95 animate-pop"
               : "bg-brand-600 text-brand-fg hover:bg-brand-700"
           }`}
         >

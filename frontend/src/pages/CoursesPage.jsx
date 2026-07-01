@@ -50,7 +50,7 @@ export default function CoursesPage() {
       )}
 
       {!loading && !error && data?.length > 0 && (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="stagger-children grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {data.map((c) => (
             <CourseCard key={c.id} course={c} />
           ))}

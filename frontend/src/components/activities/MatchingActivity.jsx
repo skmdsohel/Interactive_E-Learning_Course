@@ -86,13 +86,13 @@ export default function MatchingActivity({ activity, onCompleted }) {
   const allFilled = drops.every((c) => c !== null);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       {activity.instructions && (
         <p className="text-sm text-fg-muted">{activity.instructions}</p>
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-2">
+        <div className="space-y-2 stagger-children">
           <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
             Match each item…
           </p>
@@ -103,7 +103,9 @@ export default function MatchingActivity({ activity, onCompleted }) {
                 key={`left-${i}`}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => handleDrop(i)}
-                className="flex items-center gap-3 rounded-xl border border-line bg-elevated p-3"
+                className={`flex items-center gap-3 rounded-xl border border-line bg-elevated p-3 transition-colors duration-300 ${
+                  status === false ? "animate-shake" : ""
+                } ${status === true ? "animate-pop" : ""}`}
               >
                 <span className="flex-1 text-sm text-fg">{p.left}</span>
                 <span
@@ -152,7 +154,7 @@ export default function MatchingActivity({ activity, onCompleted }) {
                     key={chip.id}
                     draggable
                     onDragStart={(e) => onDragStart(e, chip.id)}
-                    className="cursor-move rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-fg shadow-sm hover:border-brand-500"
+                    className="hover-lift cursor-move rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-fg shadow-sm hover:border-brand-500"
                   >
                     {chip.text}
                   </span>
@@ -180,7 +182,7 @@ export default function MatchingActivity({ activity, onCompleted }) {
           <button
             type="button"
             onClick={reset}
-            className="rounded-full border border-line px-3 py-1.5 text-xs font-medium text-fg-muted hover:text-fg hover:border-line-strong"
+            className="hover-lift rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-medium text-fg-muted hover:text-fg hover:border-line-strong"
           >
             Reset
           </button>
@@ -197,7 +199,7 @@ export default function MatchingActivity({ activity, onCompleted }) {
               }
             }}
             disabled={!allFilled}
-            className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-medium text-brand-fg shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="hover-lift rounded-full bg-brand-600 px-4 py-1.5 text-sm font-medium text-brand-fg shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Check answers
           </button>

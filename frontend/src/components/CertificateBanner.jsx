@@ -97,7 +97,7 @@ export default function CertificateBanner({
         })
       : null;
     return (
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-success/30 bg-success-soft px-4 py-3">
+      <div className="animate-bounce-in mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-success/30 bg-success-soft px-4 py-3 shadow-[var(--shadow-card)]">
         <div className="text-sm">
           <p className="font-semibold text-success-soft-fg">
             Course completed{dateStr ? ` on ${dateStr}` : ""} 🎉
@@ -115,7 +115,7 @@ export default function CertificateBanner({
           type="button"
           onClick={handleDownload}
           disabled={downloading}
-          className="inline-flex items-center gap-2 rounded-xl bg-success px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-success/90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="hover-lift animate-pulse-ring inline-flex items-center gap-2 rounded-xl bg-success px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-success/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {downloading ? "Preparing…" : "Download Certificate (PDF)"}
         </button>
@@ -125,7 +125,7 @@ export default function CertificateBanner({
 
   // Not eligible yet — small hint of what's left, plus a manual recheck.
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-bg-elev px-4 py-3 text-xs text-fg-muted">
+    <div className="animate-fade-in mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-bg-elev px-4 py-3 text-xs text-fg-muted">
       <span>
         <span className="font-medium text-fg">Certificate</span>:{" "}
         {data.reason ||

@@ -64,7 +64,7 @@ export default function ActivityPanel({ activityId, sectionTitle, onCompleted })
   if (!activity) return null;
 
   return (
-    <section className="rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+    <section className="animate-fade-up rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
       <header className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">
@@ -74,7 +74,7 @@ export default function ActivityPanel({ activityId, sectionTitle, onCompleted })
           <h2 className="text-lg font-semibold text-fg">{activity.title}</h2>
         </div>
         {justCompleted && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-3 py-1 text-xs font-semibold text-success-soft-fg">
+          <span className="animate-bounce-in inline-flex items-center gap-1 rounded-full bg-success-soft px-3 py-1 text-xs font-semibold text-success-soft-fg shadow-sm">
             ✓ Activity completed
           </span>
         )}
