@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * Drag-and-drop matching activity.
@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
  * learner drops each chip onto its matching left slot. We check correctness
  * against the original pair mapping.
  */
-export default function MatchingActivity({ activity }) {
+export default function MatchingActivity({ activity, onCompleted }) {
   const pairs = activity?.payload?.pairs || [];
 
   const rightItems = useMemo(
@@ -25,11 +25,13 @@ export default function MatchingActivity({ activity }) {
   const [pool, setPool] = useState(rightItems);
   const [dragId, setDragId] = useState(null);
   const [checked, setChecked] = useState(false);
+  const notifiedRef = useRef(false);
 
   useEffect(() => {
     setDrops(Array(pairs.length).fill(null));
     setPool(rightItems);
     setChecked(false);
+    notifiedRef.current = false;
   }, [activity?.id, pairs.length, rightItems]);
 
   const onDragStart = (e, id) => {
@@ -184,7 +186,16 @@ export default function MatchingActivity({ activity }) {
           </button>
           <button
             type="button"
-            onClick={() => setChecked(true)}
+            onClick={() => {
+              setChecked(true);
+              const allCorrect =
+                drops.length > 0 &&
+                drops.every((c, i) => c && c.correctIdx === i);
+              if (allCorrect && !notifiedRef.current) {
+                notifiedRef.current = true;
+                if (onCompleted) onCompleted();
+              }
+            }}
             disabled={!allFilled}
             className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-medium text-brand-fg shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
           >

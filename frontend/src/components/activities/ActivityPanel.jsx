@@ -7,14 +7,16 @@ import MatchingActivity from "./MatchingActivity.jsx";
 import OrderingActivity from "./OrderingActivity.jsx";
 
 /** Renders one activity (fetched by id) using the component for its kind. */
-export default function ActivityPanel({ activityId, sectionTitle }) {
+export default function ActivityPanel({ activityId, sectionTitle, onCompleted }) {
   const [activity, setActivity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [justCompleted, setJustCompleted] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setJustCompleted(false);
     try {
       setActivity(await activityService.get(activityId));
     } catch (e) {
@@ -32,6 +34,16 @@ export default function ActivityPanel({ activityId, sectionTitle }) {
   useEffect(() => {
     if (Number.isFinite(activityId)) load();
   }, [activityId, load]);
+
+  const handleCompleted = useCallback(async () => {
+    try {
+      await activityService.markComplete(activityId);
+      setJustCompleted(true);
+      if (onCompleted) onCompleted(activityId);
+    } catch {
+      // Non-fatal — the learner already saw the success state.
+    }
+  }, [activityId, onCompleted]);
 
   if (loading) {
     return (
@@ -61,16 +73,24 @@ export default function ActivityPanel({ activityId, sectionTitle }) {
           </p>
           <h2 className="text-lg font-semibold text-fg">{activity.title}</h2>
         </div>
+        {justCompleted && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-3 py-1 text-xs font-semibold text-success-soft-fg">
+            ✓ Activity completed
+          </span>
+        )}
       </header>
-      <ActivityBody activity={activity} />
+      <ActivityBody activity={activity} onCompleted={handleCompleted} />
     </section>
   );
 }
 
-function ActivityBody({ activity }) {
-  if (activity.kind === "matching") return <MatchingActivity activity={activity} />;
-  if (activity.kind === "flashcards") return <FlashcardsActivity activity={activity} />;
-  if (activity.kind === "ordering") return <OrderingActivity activity={activity} />;
+function ActivityBody({ activity, onCompleted }) {
+  if (activity.kind === "matching")
+    return <MatchingActivity activity={activity} onCompleted={onCompleted} />;
+  if (activity.kind === "flashcards")
+    return <FlashcardsActivity activity={activity} onCompleted={onCompleted} />;
+  if (activity.kind === "ordering")
+    return <OrderingActivity activity={activity} onCompleted={onCompleted} />;
   return (
     <p className="text-sm text-fg-subtle">
       Unsupported activity type: <code>{activity.kind}</code>

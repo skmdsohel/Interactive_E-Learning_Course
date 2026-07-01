@@ -1,13 +1,19 @@
 """Service layer for interactive activities (instructor + learner facing)."""
 from __future__ import annotations
 
+from datetime import datetime
 from typing import List
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import NotFoundError, ValidationError
-from app.models.activity import ACTIVITY_KINDS, InteractiveActivity
+from app.models.activity import (
+    ACTIVITY_KINDS,
+    ActivityCompletion,
+    InteractiveActivity,
+)
 from app.models.course import Course, Section
 from app.models.user import ROLE_ADMIN, User
 from app.schemas.activity import (
@@ -136,3 +142,54 @@ class ActivityService:
         row = self._activity_owned(activity_id, user)
         self.db.delete(row)
         self.db.commit()
+
+    # ---- Learner completion ----
+
+    def mark_complete(self, activity_id: int, user: User) -> datetime:
+        """Idempotently record that `user` has finished activity `activity_id`.
+
+        Returns the `completed_at` timestamp of the existing or newly-created
+        row. Raises NotFoundError when the activity does not exist.
+        """
+        activity = self.db.get(InteractiveActivity, activity_id)
+        if activity is None:
+            raise NotFoundError(f"Activity {activity_id} not found")
+
+        existing = self.db.execute(
+            select(ActivityCompletion).where(
+                ActivityCompletion.user_id == user.id,
+                ActivityCompletion.activity_id == activity_id,
+            )
+        ).scalar_one_or_none()
+        if existing is not None:
+            return existing.completed_at
+
+        row = ActivityCompletion(user_id=user.id, activity_id=activity_id)
+        self.db.add(row)
+        try:
+            self.db.commit()
+        except IntegrityError:
+            # Concurrent insert from another request — swallow and refetch.
+            self.db.rollback()
+            existing = self.db.execute(
+                select(ActivityCompletion).where(
+                    ActivityCompletion.user_id == user.id,
+                    ActivityCompletion.activity_id == activity_id,
+                )
+            ).scalar_one()
+            return existing.completed_at
+        self.db.refresh(row)
+        return row.completed_at
+
+    def list_completed_ids_for_activities(
+        self, user_id: int, activity_ids: list[int]
+    ) -> set[int]:
+        if not activity_ids:
+            return set()
+        rows = self.db.execute(
+            select(ActivityCompletion.activity_id).where(
+                ActivityCompletion.user_id == user_id,
+                ActivityCompletion.activity_id.in_(activity_ids),
+            )
+        ).all()
+        return {r[0] for r in rows}

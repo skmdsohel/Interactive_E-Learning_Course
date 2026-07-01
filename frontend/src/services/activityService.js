@@ -6,6 +6,10 @@ export const activityService = {
     apiClient.get(`/sections/${sectionId}/activities`).then((r) => r.data),
   get: (activityId) =>
     apiClient.get(`/activities/${activityId}`).then((r) => r.data),
+  markComplete: (activityId) =>
+    apiClient
+      .post(`/activities/${activityId}/complete`)
+      .then((r) => r.data),
 };
 
 /** Instructor CRUD for interactive activities. */

@@ -1,8 +1,9 @@
 """Course-completion certificate service.
 
 A learner becomes eligible for a certificate once they have:
-  * marked every video in the course as completed, AND
-  * passed (at any point) every quiz attached to a section of the course.
+  * marked every video in the course as completed,
+  * passed (at any point) every quiz attached to a section of the course, AND
+  * completed every interactive activity attached to any section.
 
 PDF is generated on demand from reportlab — no files are written to disk,
 and no rows are persisted to the database. The certificate's "completion
@@ -20,9 +21,11 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import landscape, letter
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import NotFoundError, ValidationError
+from app.models.activity import ActivityCompletion
 from app.models.course import Course
 from app.models.user import User
 from app.repositories.course_repository import CourseRepository
@@ -37,6 +40,8 @@ class CertificateEligibility:
     completed_videos: int
     total_quizzes: int
     passed_quizzes: int
+    total_activities: int
+    completed_activities: int
     completion_date: Optional[datetime]
     reason: Optional[str] = None
 
@@ -47,6 +52,8 @@ class CertificateEligibility:
             "completed_videos": self.completed_videos,
             "total_quizzes": self.total_quizzes,
             "passed_quizzes": self.passed_quizzes,
+            "total_activities": self.total_activities,
+            "completed_activities": self.completed_activities,
             "completion_date": (
                 self.completion_date.isoformat() if self.completion_date else None
             ),
@@ -70,9 +77,13 @@ class CertificateService:
 
         videos = [v for section in course.sections for v in section.videos]
         quizzes = [section.quiz for section in course.sections if section.quiz is not None]
+        activities = [
+            a for section in course.sections for a in (section.activities or [])
+        ]
 
         total_videos = len(videos)
         total_quizzes = len(quizzes)
+        total_activities = len(activities)
 
         if total_videos == 0:
             return CertificateEligibility(
@@ -81,6 +92,8 @@ class CertificateService:
                 completed_videos=0,
                 total_quizzes=total_quizzes,
                 passed_quizzes=0,
+                total_activities=total_activities,
+                completed_activities=0,
                 completion_date=None,
                 reason="Course has no videos yet.",
             )
@@ -98,10 +111,24 @@ class CertificateService:
                 passed_attempts.append(attempt)
         passed_quizzes = len(passed_attempts)
 
+        activity_completion_rows: list[ActivityCompletion] = []
+        if activities:
+            activity_ids = [a.id for a in activities]
+            activity_completion_rows = list(
+                self.db.execute(
+                    select(ActivityCompletion).where(
+                        ActivityCompletion.user_id == user.id,
+                        ActivityCompletion.activity_id.in_(activity_ids),
+                    )
+                ).scalars().all()
+            )
+        completed_activities = len(activity_completion_rows)
+
         videos_done = completed_videos == total_videos
         quizzes_done = passed_quizzes == total_quizzes
+        activities_done = completed_activities == total_activities
 
-        if not videos_done or not quizzes_done:
+        if not (videos_done and quizzes_done and activities_done):
             reasons = []
             if not videos_done:
                 reasons.append(
@@ -111,12 +138,18 @@ class CertificateService:
                 reasons.append(
                     f"{total_quizzes - passed_quizzes} quiz(zes) still to pass"
                 )
+            if not activities_done:
+                reasons.append(
+                    f"{total_activities - completed_activities} activity(ies) still to complete"
+                )
             return CertificateEligibility(
                 eligible=False,
                 total_videos=total_videos,
                 completed_videos=completed_videos,
                 total_quizzes=total_quizzes,
                 passed_quizzes=passed_quizzes,
+                total_activities=total_activities,
+                completed_activities=completed_activities,
                 completion_date=None,
                 reason="; ".join(reasons),
             )
@@ -129,6 +162,9 @@ class CertificateService:
         for attempt in passed_attempts:
             if attempt.taken_at is not None:
                 timestamps.append(attempt.taken_at)
+        for ac in activity_completion_rows:
+            if ac.completed_at is not None:
+                timestamps.append(ac.completed_at)
         completion_date = max(timestamps) if timestamps else datetime.utcnow()
 
         return CertificateEligibility(
@@ -137,6 +173,8 @@ class CertificateService:
             completed_videos=completed_videos,
             total_quizzes=total_quizzes,
             passed_quizzes=passed_quizzes,
+            total_activities=total_activities,
+            completed_activities=completed_activities,
             completion_date=completion_date,
             reason=None,
         )

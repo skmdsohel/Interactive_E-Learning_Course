@@ -4,9 +4,20 @@ A single table backs three activity kinds: drag-and-drop matching, flip
 flashcards, and sequence/ordering. Type-specific data lives in the `payload`
 JSON column, validated at the schema layer.
 """
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import JSON, BigInteger, ForeignKey, Index, Integer, String
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base, IdMixin, TimestampMixin
@@ -41,3 +52,36 @@ class InteractiveActivity(IdMixin, TimestampMixin, Base):
     payload: Mapped[dict] = mapped_column(JSON, nullable=False)
 
     section: Mapped["Section"] = relationship(back_populates="activities")
+
+
+class ActivityCompletion(IdMixin, Base):
+    """Marks that a learner has finished a given activity.
+
+    Insert-once (upsert-style): one row per (user_id, activity_id). Kept
+    minimal because activities are not scored — completion is binary.
+    """
+
+    __tablename__ = "activity_completions"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "activity_id", name="uq_activity_completions_user_activity"
+        ),
+        Index("ix_activity_completions_user", "user_id"),
+        Index("ix_activity_completions_activity", "activity_id"),
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    activity_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("interactive_activities.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    completed_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        server_default=func.now(),
+        nullable=False,
+    )

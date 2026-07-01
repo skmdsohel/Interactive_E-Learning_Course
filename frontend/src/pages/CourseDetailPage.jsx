@@ -143,6 +143,7 @@ export default function CourseDetailPage() {
               key={currentActivity.activityId}
               activityId={currentActivity.activityId}
               sectionTitle={activeActivitySectionTitle}
+              onCompleted={() => setQuizRefreshKey((k) => k + 1)}
             />
           ) : currentQuiz ? (
             <QuizPanel

@@ -104,7 +104,8 @@ export default function CertificateBanner({
           </p>
           <p className="text-xs text-success-soft-fg/80">
             {data.completed_videos}/{data.total_videos} videos · {data.passed_quizzes}/
-            {data.total_quizzes} quizzes passed
+            {data.total_quizzes} quizzes passed · {data.completed_activities ?? 0}/
+            {data.total_activities ?? 0} activities
           </p>
           {downloadError && (
             <p className="mt-1 text-xs text-danger">{downloadError}</p>
@@ -128,7 +129,7 @@ export default function CertificateBanner({
       <span>
         <span className="font-medium text-fg">Certificate</span>:{" "}
         {data.reason ||
-          `${data.completed_videos}/${data.total_videos} videos · ${data.passed_quizzes}/${data.total_quizzes} quizzes`}
+          `${data.completed_videos}/${data.total_videos} videos · ${data.passed_quizzes}/${data.total_quizzes} quizzes · ${data.completed_activities ?? 0}/${data.total_activities ?? 0} activities`}
         .
       </span>
       <button

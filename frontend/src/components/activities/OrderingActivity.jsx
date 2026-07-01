@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * The stored items are the correct order; we shuffle for display and the
  * learner drags to reorder.
  */
-export default function OrderingActivity({ activity }) {
+export default function OrderingActivity({ activity, onCompleted }) {
   const correctOrder = activity?.payload?.items || [];
 
   const initial = useMemo(() => {
@@ -23,10 +23,12 @@ export default function OrderingActivity({ activity }) {
   const [items, setItems] = useState(initial);
   const [checked, setChecked] = useState(false);
   const dragIdRef = useRef(null);
+  const notifiedRef = useRef(false);
 
   useEffect(() => {
     setItems(initial);
     setChecked(false);
+    notifiedRef.current = false;
   }, [initial]);
 
   const onDragStart = (id) => {
@@ -165,7 +167,16 @@ export default function OrderingActivity({ activity }) {
           </button>
           <button
             type="button"
-            onClick={() => setChecked(true)}
+            onClick={() => {
+              setChecked(true);
+              const allCorrect =
+                items.length > 0 &&
+                items.every((it, i) => it.correctIdx === i);
+              if (allCorrect && !notifiedRef.current) {
+                notifiedRef.current = true;
+                if (onCompleted) onCompleted();
+              }
+            }}
             className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-medium text-brand-fg shadow-sm transition hover:bg-brand-700"
           >
             Check order

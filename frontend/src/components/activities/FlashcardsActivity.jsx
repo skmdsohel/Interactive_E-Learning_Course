@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Flip flashcards.
@@ -7,18 +7,35 @@ import { useEffect, useState } from "react";
  *
  * Learner clicks a card to flip front <-> back. Prev/Next moves through the
  * deck and always resets to the front face so the next card lands unflipped.
+ * The deck is considered "completed" once every card has been flipped to its
+ * back at least once.
  */
-export default function FlashcardsActivity({ activity }) {
+export default function FlashcardsActivity({ activity, onCompleted }) {
   const cards = activity?.payload?.cards || [];
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [known, setKnown] = useState(() => new Set());
+  const [seenBacks, setSeenBacks] = useState(() => new Set());
+  const notifiedRef = useRef(false);
 
   useEffect(() => {
     setIndex(0);
     setFlipped(false);
     setKnown(new Set());
+    setSeenBacks(new Set());
+    notifiedRef.current = false;
   }, [activity?.id]);
+
+  useEffect(() => {
+    if (
+      cards.length > 0 &&
+      seenBacks.size === cards.length &&
+      !notifiedRef.current
+    ) {
+      notifiedRef.current = true;
+      if (onCompleted) onCompleted();
+    }
+  }, [seenBacks, cards.length, onCompleted]);
 
   if (cards.length === 0) {
     return (
@@ -32,6 +49,21 @@ export default function FlashcardsActivity({ activity }) {
   const goto = (delta) => {
     setFlipped(false);
     setIndex((i) => (i + delta + cards.length) % cards.length);
+  };
+
+  const toggleFlip = () => {
+    setFlipped((v) => {
+      const next = !v;
+      if (next) {
+        setSeenBacks((prev) => {
+          if (prev.has(index)) return prev;
+          const s = new Set(prev);
+          s.add(index);
+          return s;
+        });
+      }
+      return next;
+    });
   };
 
   const toggleKnown = () => {
@@ -65,7 +97,7 @@ export default function FlashcardsActivity({ activity }) {
       >
         <button
           type="button"
-          onClick={() => setFlipped((v) => !v)}
+          onClick={toggleFlip}
           aria-label={flipped ? "Show front of card" : "Show back of card"}
           className="relative block w-full text-left"
           style={{ minHeight: "16rem" }}
