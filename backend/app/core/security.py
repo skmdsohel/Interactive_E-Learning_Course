@@ -9,11 +9,12 @@ flow (Phase 1). Google-only accounts keep `password_hash` NULL.
 """
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import bcrypt
 import jwt
-from passlib.context import CryptContext
 
 from app.core.config import settings
 
@@ -22,25 +23,42 @@ class TokenError(Exception):
     """Raised when an access token cannot be decoded or has expired."""
 
 
-# ---- Password hashing (bcrypt) ----
+# ---- Password hashing (bcrypt, called directly — no passlib) ----
+#
+# bcrypt has a hard 72-byte input limit and silently truncates longer
+# inputs, which is a footgun. Django's approach is used here: pre-hash
+# the password with SHA-256 (base64-encoded => 44 bytes) so any input
+# length is safely reduced under the 72-byte ceiling before bcrypt sees
+# it. This is the same construction Django ships in
+# `BCryptSHA256PasswordHasher` and does not weaken bcrypt's security.
+#
+# NOTE: passwords hashed here can only be verified by this module — do
+# not port these hashes to a system that expects raw bcrypt.
 
-# Single shared context; bcrypt has a 72-byte input limit which passlib
-# handles internally when using the `bcrypt` scheme.
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+_BCRYPT_ROUNDS = 12  # ~200ms on modern hardware, standard OWASP baseline
+
+
+def _prehash(password: str) -> bytes:
+    """SHA-256 the password so we never exceed bcrypt's 72-byte cap."""
+    digest = hashlib.sha256(password.encode("utf-8")).digest()
+    # Hex-encode so the value is printable and stays well under 72 bytes.
+    return digest.hex().encode("ascii")
 
 
 def hash_password(plain_password: str) -> str:
     """Return a bcrypt hash for the given plain-text password."""
-    return _pwd_context.hash(plain_password)
+    salted = bcrypt.gensalt(rounds=_BCRYPT_ROUNDS)
+    hashed = bcrypt.hashpw(_prehash(plain_password), salted)
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain_password: str, password_hash: str | None) -> bool:
-    """Constant-time password check. Returns False if hash is missing."""
+    """Constant-time password check. Returns False if hash is missing/malformed."""
     if not password_hash:
         return False
     try:
-        return _pwd_context.verify(plain_password, password_hash)
-    except ValueError:
+        return bcrypt.checkpw(_prehash(plain_password), password_hash.encode("utf-8"))
+    except (ValueError, TypeError):
         # Malformed hash on disk — treat as auth failure rather than raise.
         return False
 
