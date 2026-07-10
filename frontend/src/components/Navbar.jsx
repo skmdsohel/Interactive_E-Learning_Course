@@ -9,7 +9,7 @@ const linkInactive = "text-fg-muted hover:text-fg hover:bg-muted";
 const linkActive = "bg-brand-50 text-brand-700";
 
 export default function Navbar() {
-  const { isAuthenticated, isAdmin, canManageCourses, user, logout } = useAuth();
+  const { isAuthenticated, isAdmin, canManageCourses, user, hasLocalPassword, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = () => {
@@ -108,6 +108,14 @@ export default function Navbar() {
               >
                 Sign out
               </button>
+              {hasLocalPassword && (
+                <NavLink
+                  to="/account/password"
+                  className="hidden rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-medium text-fg-muted transition hover:text-fg hover:border-line-strong sm:inline-flex"
+                >
+                  Password
+                </NavLink>
+              )}
             </div>
           ) : (
             <NavLink

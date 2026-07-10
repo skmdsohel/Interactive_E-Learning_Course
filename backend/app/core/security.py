@@ -73,3 +73,40 @@ def decode_access_token(token: str) -> dict[str, Any]:
         raise TokenError("Token has expired") from exc
     except jwt.InvalidTokenError as exc:
         raise TokenError("Invalid token") from exc
+
+
+# ---- Password-reset tokens ----
+# Short-lived, single-purpose JWTs used by the forgot-password flow. They
+# carry the user id as `sub` plus a `purpose="pwreset"` claim so a normal
+# access token cannot be replayed against the reset endpoint (and vice
+# versa). Default lifetime is 30 minutes.
+
+_RESET_TOKEN_PURPOSE = "pwreset"
+_RESET_TOKEN_MINUTES = 30
+
+
+def create_password_reset_token(*, user_id: int) -> tuple[str, int]:
+    """Return `(reset_jwt, expires_in_seconds)`."""
+    expires_delta = timedelta(minutes=_RESET_TOKEN_MINUTES)
+    now = datetime.now(tz=timezone.utc)
+    exp = now + expires_delta
+    payload = {
+        "sub": str(user_id),
+        "iat": int(now.timestamp()),
+        "exp": int(exp.timestamp()),
+        "purpose": _RESET_TOKEN_PURPOSE,
+    }
+    token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+    return token, int(expires_delta.total_seconds())
+
+
+def decode_password_reset_token(token: str) -> int:
+    """Return the user id encoded in a reset token, or raise TokenError."""
+    payload = decode_access_token(token)
+    if payload.get("purpose") != _RESET_TOKEN_PURPOSE:
+        raise TokenError("Token is not a password-reset token")
+    sub = payload.get("sub")
+    try:
+        return int(sub)  # type: ignore[arg-type]
+    except (TypeError, ValueError) as exc:
+        raise TokenError("Invalid token subject") from exc

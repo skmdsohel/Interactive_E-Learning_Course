@@ -51,6 +51,9 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   const logout = useCallback(() => {
+    // Fire-and-forget server-side logout hook. Errors are ignored — the
+    // client-side session is the source of truth today (JWTs are stateless).
+    authService.logout().catch(() => {});
     setToken(null);
     setUser(null);
     writeStored(null);
@@ -93,6 +96,39 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const signInWithEmail = useCallback(async ({ email, password }) => {
+    setLoading(true);
+    try {
+      const res = await authService.login({ email, password });
+      setToken(res.access_token);
+      setUser(res.user);
+      writeStored({ token: res.access_token, user: res.user });
+      return res.user;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const registerWithEmail = useCallback(async (payload) => {
+    setLoading(true);
+    try {
+      const res = await authService.register(payload);
+      setToken(res.access_token);
+      setUser(res.user);
+      writeStored({ token: res.access_token, user: res.user });
+      return res.user;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const changePassword = useCallback(
+    async ({ currentPassword, newPassword }) => {
+      await authService.changePassword({ currentPassword, newPassword });
+    },
+    []
+  );
+
   const chooseRole = useCallback(
     async (role) => {
       const updated = await authService.chooseRole(role);
@@ -112,12 +148,26 @@ export function AuthProvider({ children }) {
       isInstructor: user?.role === "instructor",
       canManageCourses: user?.role === "admin" || user?.role === "instructor",
       needsRoleSelection: Boolean(token && user && user.role === "pending"),
+      hasLocalPassword: Boolean(user?.has_local_password),
       loading,
       signInWithGoogle,
+      signInWithEmail,
+      registerWithEmail,
+      changePassword,
       chooseRole,
       logout,
     }),
-    [token, user, loading, signInWithGoogle, chooseRole, logout]
+    [
+      token,
+      user,
+      loading,
+      signInWithGoogle,
+      signInWithEmail,
+      registerWithEmail,
+      changePassword,
+      chooseRole,
+      logout,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

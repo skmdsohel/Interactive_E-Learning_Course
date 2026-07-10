@@ -1,14 +1,18 @@
 import { Route, Routes } from "react-router-dom";
 
 import AdminPage from "../pages/AdminPage.jsx";
+import ChangePasswordPage from "../pages/ChangePasswordPage.jsx";
 import CourseDetailPage from "../pages/CourseDetailPage.jsx";
 import CoursesPage from "../pages/CoursesPage.jsx";
+import ForgotPasswordPage from "../pages/ForgotPasswordPage.jsx";
 import HealthPage from "../pages/HealthPage.jsx";
 import HomePage from "../pages/HomePage.jsx";
 import InstructorCourseEditorPage from "../pages/InstructorCourseEditorPage.jsx";
 import InstructorPage from "../pages/InstructorPage.jsx";
 import LoginPage from "../pages/LoginPage.jsx";
 import NotFoundPage from "../pages/NotFoundPage.jsx";
+import RegisterPage from "../pages/RegisterPage.jsx";
+import ResetPasswordPage from "../pages/ResetPasswordPage.jsx";
 import AdminRoute from "./AdminRoute.jsx";
 import InstructorRoute from "./InstructorRoute.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
@@ -27,6 +31,17 @@ export default function AppRoutes() {
         }
       />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route
+        path="/account/password"
+        element={
+          <ProtectedRoute>
+            <ChangePasswordPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/instructor"
         element={

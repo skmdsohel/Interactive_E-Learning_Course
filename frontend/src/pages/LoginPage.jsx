@@ -1,16 +1,28 @@
 import { GoogleLogin } from "@react-oauth/google";
 import { useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext.jsx";
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+function extractError(err, fallback) {
+  return (
+    err?.response?.data?.error?.message ||
+    err?.response?.data?.detail ||
+    err?.message ||
+    fallback
+  );
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, signInWithGoogle, loading } = useAuth();
+  const { isAuthenticated, signInWithGoogle, signInWithEmail, loading } = useAuth();
   const [error, setError] = useState(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const from = location.state?.from?.pathname || "/";
 
@@ -18,7 +30,7 @@ export default function LoginPage() {
     return <Navigate to={from} replace />;
   }
 
-  const handleSuccess = async (credentialResponse) => {
+  const handleGoogleSuccess = async (credentialResponse) => {
     setError(null);
     if (!credentialResponse?.credential) {
       setError("No credential returned from Google.");
@@ -28,12 +40,25 @@ export default function LoginPage() {
       await signInWithGoogle(credentialResponse.credential);
       navigate(from, { replace: true });
     } catch (err) {
-      const msg =
-        err?.response?.data?.error?.message ||
-        err?.response?.data?.detail ||
-        err?.message ||
-        "Sign-in failed.";
-      setError(msg);
+      setError(extractError(err, "Sign-in failed."));
+    }
+  };
+
+  const handleEmailSubmit = async (event) => {
+    event.preventDefault();
+    setError(null);
+    if (!email || !password) {
+      setError("Enter both email and password.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await signInWithEmail({ email, password });
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(extractError(err, "Login failed."));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -55,11 +80,58 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Auth panel — light surface keeps Google's button visually integrated in both themes. */}
+        {/* Email + password form */}
+        <form onSubmit={handleEmailSubmit} className="mt-8 space-y-4 px-8">
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-fg-subtle">
+              Email
+            </span>
+            <input
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-fg outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30"
+              placeholder="you@example.com"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-fg-subtle">
+              Password
+            </span>
+            <input
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-fg outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30"
+              placeholder="••••••••"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={submitting || loading}
+            className="w-full rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-brand-fg shadow-sm transition hover:bg-brand-700 disabled:opacity-60"
+          >
+            {submitting ? "Signing in…" : "Sign in"}
+          </button>
+          <div className="flex items-center justify-between text-xs">
+            <Link to="/forgot-password" className="text-brand-700 hover:underline">
+              Forgot password?
+            </Link>
+            <Link to="/register" className="text-brand-700 hover:underline">
+              Create an account
+            </Link>
+          </div>
+        </form>
+
+        {/* Google sign-in panel */}
         <div className="mt-8 border-y border-line bg-[#f8fafc] px-8 py-8 dark:bg-[#e9eef5]">
           <div className="flex items-center justify-center gap-3 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
             <span className="h-px flex-1 bg-slate-300" />
-            <span>Continue with</span>
+            <span>Or continue with</span>
             <span className="h-px flex-1 bg-slate-300" />
           </div>
 
@@ -75,7 +147,7 @@ export default function LoginPage() {
             ) : (
               <div className="w-full overflow-hidden rounded-full ring-1 ring-slate-300/70 [color-scheme:light]">
                 <GoogleLogin
-                  onSuccess={handleSuccess}
+                  onSuccess={handleGoogleSuccess}
                   onError={() => setError("Google sign-in was cancelled or failed.")}
                   useOneTap={false}
                   theme="outline"
