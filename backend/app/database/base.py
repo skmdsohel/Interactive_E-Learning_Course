@@ -1,7 +1,8 @@
 """SQLAlchemy declarative base and shared model mixins."""
 from datetime import datetime
+from typing import Optional
 
-from sqlalchemy import BigInteger, DateTime, func
+from sqlalchemy import BigInteger, DateTime, ForeignKey, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -29,3 +30,23 @@ class IdMixin:
     """Adds a standard auto-increment BIGINT primary key."""
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+
+
+class AuditMixin:
+    """Adds `created_by` and `updated_by` FK columns referencing users.id.
+
+    Both columns are nullable so system-generated or migration-seeded rows
+    can omit an author. Application services are responsible for populating
+    these values on write.
+    """
+
+    created_by: Mapped[Optional[int]] = mapped_column(
+        BigInteger,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    updated_by: Mapped[Optional[int]] = mapped_column(
+        BigInteger,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )

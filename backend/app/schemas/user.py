@@ -13,6 +13,12 @@ class UserRead(ORMModel):
     name: Optional[str] = None
     picture_url: Optional[str] = None
     role: str = "learner"
+    # L&D-portal fields (Phase 0).
+    department: Optional[str] = None
+    job_title: Optional[str] = None
+    phone: Optional[str] = None
+    status: str = "active"
+    has_local_password: bool = False
     created_at: datetime
     updated_at: datetime
 
